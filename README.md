@@ -32,7 +32,8 @@ However, in case of multiplayer lobbies, only the LOBBY HOST should use this.**
 *Sideloading is broken rn, don't try to sideload this as `DBGCORE.DLL`*
 
 ## GUI Usage
-![GUI](GUIScreenshot.png)
+![GUI](GUIScreenshot.png)  
+
 The simple GUI provides the following features:
 ### Settings
  - **Shod Debug Console:** Shows/Hides the debug console.
