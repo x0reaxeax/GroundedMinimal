@@ -30,7 +30,7 @@ Please refer to the [Notes](#notes) section for more information.
 *Sideloading is broken rn, don't try to sideload this as `DBGCORE.DLL`*
 
 ## GUI Usage
-![GUI](2025-07-16_13-50.png)
+![GUI](GUIScreenshot.png)
 The simple GUI provides the following features:
 ### Settings
  - **Shod Debug Console:** Shows/Hides the debug console.
