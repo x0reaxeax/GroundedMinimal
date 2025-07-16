@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2025 x0reaxeax
+
 /// @file   dllmain.cpp
 /// @brief  Main entry point for the GroundedMinimal DLL and friends.
 ///         This code is pure meme shit, i hate this language,

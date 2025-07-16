@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2025 x0reaxeax
+
 /// @file   C2Cycle.cpp
 /// @brief  C2Cycle w/ dumb O(n^2) cleaning logic.
 ///         Hope you like wasting CPU cycles, because I sure do.
