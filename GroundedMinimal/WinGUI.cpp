@@ -20,6 +20,7 @@
 ///////////////////////////////////////////////////////
 /// Version and repository info
 
+// TODO: use VerQueryValueA/W or something to read this bih from rc file
 #define _STRINGIFY(x) #x
 #define _TOSTRING(x) _STRINGIFY(x)
 #define VERSION_STRING L"GroundedMinimal v" _TOSTRING(ANTDIET_VERSION_MAJOR) "." _TOSTRING(ANTDIET_VERSION_MINOR) "." _TOSTRING(ANTDIET_VERSION_PATCH)
