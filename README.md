@@ -9,6 +9,8 @@ It is highly recommended to **BACKUP YOUR SAVE FILES** before using this tool, e
 
 Please refer to the [Notes](#notes) section for more information.
 
+**This tool works both with Singleplayer and Multiplayer.  
+However, in case of multiplayer lobbies, only the LOBBY HOST should use this.**
 
 ## Interfaces
  - **Ugly-ass GUI:** A simple window for convenience and abstraction of command line, copypasted straight out of MS Docs Examples.
@@ -31,7 +33,8 @@ Please refer to the [Notes](#notes) section for more information.
 *Sideloading is broken rn, don't try to sideload this as `DBGCORE.DLL`*
 
 ## GUI Usage
-![GUI](GUIScreenshot.png)
+![GUI](GUIScreenshot.png)  
+
 The simple GUI provides the following features:
 ### Settings
  - **Shod Debug Console:** Shows/Hides the debug console.
