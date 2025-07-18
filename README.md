@@ -130,6 +130,7 @@ C++17 or higher is required.
  - Please note that if "Global Cheat Mode" or "Global C2 Authority" is enabled, all connected players can use the chat commands to spawn items or trigger C2Cycles, respectively, which means that players can **!!!EXECUTE CONTROLLED CODE ON YOUR MACHINE!!!**.  
   This code is controlled, but I cannot guarantee that it cannot be exploited, so please only use this tool with people you trust.
  - Crashes may occur when (re)loading saves, or backing out to the main menu.
+ - The game might temporarily freeze when cleaning up MASSIVE number of items from the ground. Just give it some time.
  - Upon exiting the game, the tool sometimes keeps the game process running, so consider killing it manually.
  - The tool was only tested with the Steam version of Grounded, and may not work with Xbox Game Pass or *other* versions.
  - The tool was only tested with 2 players, because I don't have friends (F).
