@@ -216,13 +216,13 @@
 | `Honeydew` |  |
 | `FoodHotDog` |  |
 | `FoodHotDogPristine` |  |
-| `FoodCandyCorn` |  |
+| `FoodCandyCorn` | Candy Cornlet |
 | `FoodCookieSandwich` |  |
 | `FoodCookieSandwichPristine` |  |
 | `FoodApple` |  |
 | `FoodApplePristine` |  |
 | `CricketMeat` |  |
-| `FoodMint` |  |
+| `FoodMint` | Mint Shard |
 | `SpoiledMeat` |  |
 | `AphidMeat` |  |
 | `CookedAphidMeat` |  |
@@ -428,16 +428,16 @@
 | `Boomerang` |  |
 | `BroodmotherClub` |  |
 | `BossKeyBroodmother` |  |
-| `GreatswordAntlion` |  |
-| `MorningStarSalt` |  |
-| `KatanaSpicy` |  |
-| `KatanaMint` |  |
-| `KatanaSour` |  |
+| `GreatswordAntlion` | Antlion Greatsword |
+| `MorningStarSalt` | Salt Morning Star |
+| `KatanaSpicy` | Spicy Coaltana |
+| `KatanaMint` | Fresh Coldtana |
+| `KatanaSour` | Sour Katanga |
 | `TorchCharcoal` |  |
-| `StaffSpicy` |  |
-| `StaffMint` |  |
-| `StaffSour` |  |
-| `StaffAntQueen` |  |
+| `StaffSpicy` | Spicy Staff |
+| `StaffMint` | Mint Staff |
+| `StaffSour` | Sour Staff |
+| `StaffAntQueen` | Ant Queen Staff |
 | `Flare` |  |
 | `AntClubFire` |  |
 | `ShieldWeevil` |  |
