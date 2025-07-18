@@ -17,6 +17,8 @@ namespace WinGUI {
     extern std::function<void()> fnGlobalC2CycleCallback;
     // Called when a DataTable is selected or deselected (empty string on deselect)
     extern std::function<void(const std::wstring& /*szTableName*/)> fnDataTableSelectedCallback;
+    // Called when Summon button is clicked with selected class name
+    extern std::function<void(const std::string& /*szClassName*/)> fnSummonCallback;
 
     bool Initialize(void);
     void Stop(void);

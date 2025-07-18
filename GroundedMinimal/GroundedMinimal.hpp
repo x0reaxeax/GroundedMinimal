@@ -4,6 +4,10 @@
 #ifndef _GROUNDED_MINIMAL_HPP
 #define _GROUNDED_MINIMAL_HPP
 
+#define ANTDIET_VERSION_MAJOR 1
+#define ANTDIET_VERSION_MINOR 1
+#define ANTDIET_VERSION_PATCH 0
+
 #include <Windows.h>
 
 //#include "SDK.hpp"
@@ -25,6 +29,7 @@
 #include "SDK/UI_ChatLog_parameters.hpp"
 
 #define DLLEXPORT __declspec(dllexport)
+#define GameThread  // Can only be executed from the game thread
 
 typedef void (*ProcessEvent_t)(const SDK::UObject *, SDK::UFunction *, LPVOID);
 

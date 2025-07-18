@@ -39,6 +39,7 @@
 #include "ItemSpawner.hpp"
 #include "C2Cycle.hpp"
 #include "Command.hpp"
+#include "Summon.hpp"
 #include "WinGUI.hpp"
 
 #include <vector>
@@ -392,7 +393,10 @@ void HandleSpawnItem(void) {
         "[ItemSpawner] Enter player ID (empty for local): ", 
         UnrealUtils::GetLocalPlayerId()
     );
-    int32_t iItemCount = ReadIntegerInput("[ItemSpawner] Enter item count (default 1): ", 1);
+    int32_t iItemCount = ReadIntegerInput(
+        "[ItemSpawner] Enter item count (default 1): ", 
+        1
+    );
 
     auto* lpParams = new ItemSpawner::BufferParamsSpawnItem{
         .iPlayerId = iPlayerId,
@@ -406,8 +410,11 @@ void HandleSpawnItem(void) {
 
 void HandleDataTableSearch(void) {
     std::string szTableName;
-    if (!ReadInterpreterInput("[DataTable] Enter DataTable name to search: ", szTableName)) {
-        LogError("DataTable", "Invalid input, please provide a table name");
+    if (!ReadInterpreterInput(
+        "[DataTableSearch] Enter DataTable name to search: ", 
+        szTableName
+    )) {
+        LogError("DataTableDump", "Invalid input, please provide a table name");
         return;
     }
     UnrealUtils::FindDataTableByName(szTableName);
@@ -415,7 +422,10 @@ void HandleDataTableSearch(void) {
 
 void HandleItemDump(void) {
     std::string szTableName;
-    if (!ReadInterpreterInput("[DataTableItemDump] Enter DataTable name to dump items: ", szTableName)) {
+    if (!ReadInterpreterInput(
+        "[DataTableItemDump] Enter DataTable name to dump items: ", 
+        szTableName
+    )) {
         LogError("DataTableItemDump", "Invalid input, please provide a table name");
         return;
     }
@@ -430,8 +440,11 @@ void HandleItemDump(void) {
 
 void HandleFindItemTable(void) {
     std::string szItemName;
-    if (!ReadInterpreterInput("[DataTable] Enter item name to find DataTable for: ", szItemName)) {
-        LogError("DataTable", "Invalid input, please provide an item name");
+    if (!ReadInterpreterInput(
+        "[DataTableItemSearch] Enter item name to find DataTable for: ", 
+        szItemName
+    )) {
+        LogError("DataTableItemSearch", "Invalid input, please provide an item name");
         return;
     }
     UnrealUtils::FindMatchingDataTableForItemName(szItemName);
@@ -439,7 +452,10 @@ void HandleFindItemTable(void) {
 
 void HandleFunctionDump(void) {
     std::string szFunctionName;
-    if (!ReadInterpreterInput("[FunctionDump] Enter function name to search: ", szFunctionName)) {
+    if (!ReadInterpreterInput(
+        "[FunctionDump] Enter function name to search: ", 
+        szFunctionName
+    )) {
         LogError("FunctionDump", "Invalid input, please provide a function name");
         return;
     }
@@ -453,19 +469,54 @@ void HandleC2Cycle(void) {
     );
 }
 
+void HandleSummon(void) {
+    std::string szClassName;
+    if (!ReadInterpreterInput(
+        "[Summon] Enter class name to summon: ", 
+        szClassName
+    )) {
+        LogError("Summon", "Invalid input, please provide a class name");
+        return;
+    }
+
+    if (szClassName.empty()) {
+        LogError("Summon", "Class name cannot be empty");
+        return;
+    }
+
+    Summon::SummonClass(
+        szClassName
+    );
+}
+
+void HandleClassDump(void) {
+    std::string szClassName;
+    if (!ReadInterpreterInput(
+        "[ClassDump] Enter class name needle to search: ", 
+        szClassName
+    )) {
+        LogError("ClassDump", "Invalid input, please provide a class name");
+        return;
+    }
+
+    UnrealUtils::DumpClasses(nullptr, szClassName);
+}
+
 // Super command table oh my god
 ConsoleCommand g_Commands[] = {
     //{"c2", "Run C2 cleanup cycle", []() { C2Cycle::C2Cycle(); }},
     {"c2", "Run C2 cleanup cycle", HandleC2Cycle },
     {"C_CullItem", "Cull item by index", HandleCullItem },
     {"C_CullItemType", "Cull all items of type", HandleCullItemType },
-    {"I_SpawnItem", "Spawn item", HandleSpawnItem},
-    {"H_GetAuthority", "Check host authority", []() { UnrealUtils::IsPlayerHostAuthority(); }},
     {"F_DataTableNeedle", "Search for DataTable", HandleDataTableSearch },
     {"F_ItemDump", "Dump DataTable items", HandleItemDump },
     {"F_FindItemTable", "Find DataTable for item", HandleFindItemTable },
     {"F_FunctionDump", "Dump functions", HandleFunctionDump },
+    {"F_ClassDump", "Dump classes by name", HandleClassDump },
+    {"H_GetAuthority", "Check host authority", []() { UnrealUtils::IsPlayerHostAuthority(); }},
+    {"I_SpawnItem", "Spawn item", HandleSpawnItem },
     {"P_ShowPlayers", "Show connected players", []() { UnrealUtils::DumpConnectedPlayers(); }},
+    {"S_SummonClass", "Summon an internal class", HandleSummon },
     {"X_GlobalCheatMode", "Toggle global cheat mode", []() { 
         ItemSpawner::GlobalCheatMode = !ItemSpawner::GlobalCheatMode;
         LogMessage("Cheat", "Global cheat mode " + std::string(ItemSpawner::GlobalCheatMode ? "enabled" : "disabled"));

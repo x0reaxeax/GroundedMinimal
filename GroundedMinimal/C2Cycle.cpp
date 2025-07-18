@@ -34,7 +34,7 @@ namespace C2Cycle {
         );
     }
 
-    void CullItemInstance(
+    void GameThread CullItemInstance(
         SDK::ASpawnedItem *lpItemToCull
     ) {
         if (nullptr == lpItemToCull) {
@@ -73,7 +73,14 @@ namespace C2Cycle {
             return; // Item is already being destroyed
         }
 
-        CullItemInstance(lpItemToCull);
+        BufferParamsCullItem *lpParams = new BufferParamsCullItem{
+            .lpItemInstance = lpItemToCull
+        };
+
+        Command::SubmitTypedCommand(
+            Command::CommandId::CmdIdCullItemInstance,
+            lpParams
+        );
     }
 
     void CullAllItemInstances(
@@ -97,7 +104,10 @@ namespace C2Cycle {
             SDK::ASpawnedItem *lpSpawnedItem = static_cast<SDK::ASpawnedItem*>(lpObj);
 
             std::string szFullObjectName = lpSpawnedItem->GetFullName();
-            if (!StringContainsCaseInsensitive(szFullObjectName, szTargetItemTypeName)) {
+            if (!StringContainsCaseInsensitive(
+                szFullObjectName, 
+                szTargetItemTypeName
+            )) {
                 continue;
             }
 
@@ -107,7 +117,15 @@ namespace C2Cycle {
                 continue;
             }
 
-            CullItemInstance(static_cast<SDK::ASpawnedItem*>(lpObj));
+            //CullItemInstance(static_cast<SDK::ASpawnedItem*>(lpObj));
+            BufferParamsCullItem *lpParams = new BufferParamsCullItem{
+                .lpItemInstance = lpSpawnedItem
+            };
+
+            Command::SubmitTypedCommand(
+                Command::CommandId::CmdIdCullItemInstance, 
+                lpParams
+            );
         }
     }
 
@@ -168,7 +186,7 @@ namespace C2Cycle {
         LogMessage("Collect", "=========================================================");
     }
 
-    void CullClumpedItems(
+    static void GameThread CullClumpedItems(
         float fClusterRadius = CLUSTER_DEFAULT_RADIUS
     ) {
         std::lock_guard<std::mutex> lockGuard(ListMutex);
@@ -222,7 +240,7 @@ namespace C2Cycle {
         CollectedItems.clear();
     }
 
-    void C2Cycle(void) {
+    void GameThread C2Cycle(void) {
         if (!UnrealUtils::IsPlayerHostAuthority()) {
             LogError("C2", "C2Cycle can only be executed by the host");
             return;

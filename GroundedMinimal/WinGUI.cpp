@@ -4,8 +4,10 @@
 #include "GroundedMinimal.hpp"
 #include "UnrealUtils.hpp"
 #include "ItemSpawner.hpp"
+#include "CoreUtils.hpp"
 #include "Command.hpp"
 #include "C2Cycle.hpp"
+#include "Summon.hpp"
 #include "WinGUI.hpp"
 
 #include <commctrl.h>
@@ -15,6 +17,14 @@
 
 #pragma comment(lib, "comctl32.lib")
 
+///////////////////////////////////////////////////////
+/// Version and repository info
+
+#define _STRINGIFY(x) #x
+#define _TOSTRING(x) _STRINGIFY(x)
+#define VERSION_STRING L"GroundedMinimal v" _TOSTRING(ANTDIET_VERSION_MAJOR) "." _TOSTRING(ANTDIET_VERSION_MINOR) "." _TOSTRING(ANTDIET_VERSION_PATCH)
+#define GITHUB_REPO_URL L"https://github.com/x0reaxeax/GroundedMinimal"
+
 // Control IDs
 #define IDC_CHECK_SHOW_CONSOLE    100
 #define IDC_CHECK_GLOBAL_CHEAT    101
@@ -22,14 +32,20 @@
 #define IDC_LIST_PLAYERS          200
 #define IDC_LIST_DATA_TABLES      201
 #define IDC_LIST_ITEM_NAMES       202
+#define IDC_LIST_CLASS_NAMES      203
 #define IDC_BUTTON_SPAWN          300
 #define IDC_BUTTON_CULL           301
 #define IDC_BUTTON_C2_CYCLE       302
+#define IDC_BUTTON_SUMMON         303
 #define IDC_EDIT_ITEM_COUNT       400
 #define IDC_STATIC_ITEM_COUNT     401
 #define IDC_TIMER_PLAYER_UPDATE   500
 #define IDC_EDIT_ITEM_SEARCH      600
 #define IDC_STATIC_ITEM_SEARCH    601
+#define IDC_EDIT_CLASS_SEARCH     602
+#define IDC_STATIC_CLASS_SEARCH   603
+#define IDC_STATIC_VERSION        604
+#define IDC_STATIC_GITHUB         605
 
 namespace WinGUI {
     ///////////////////////////////////////////////////////
@@ -38,6 +54,7 @@ namespace WinGUI {
     std::function<void(int32_t, const std::wstring&, const std::wstring&, int32_t)> fnSpawnCallback = nullptr;
     std::function<void()> fnGlobalC2CycleCallback = nullptr;
     std::function<void(const std::wstring&)> fnDataTableSelectedCallback = nullptr;
+    std::function<void(const std::string&)> fnSummonCallback = nullptr;
 
     std::vector<SDK::APlayerState*> g_vszPlayers;
     std::vector<UnrealUtils::DataTableInfo> g_vDataTables;
@@ -48,6 +65,12 @@ namespace WinGUI {
     std::vector<std::string> g_vCurrentDataTableItems;
     std::string g_szCurrentDataTableName;
 
+    ///////////////////////////////////////////////////////
+    /// Storage for class names
+
+    std::vector<std::string> g_vAllClassNames;
+    std::vector<std::string> g_vCurrentFilteredClassNames;
+
     static bool g_bGuiInitialized = false;
     static bool g_bConsoleVisible = true;
 
@@ -55,10 +78,15 @@ namespace WinGUI {
     static HWND g_hListPlayers = nullptr;
     static HWND g_hListDataTables = nullptr;
     static HWND g_hListItemNames = nullptr;
+    static HWND g_hListClassNames = nullptr;
     static HWND g_hEditItemCount = nullptr;
     static HWND g_hCheckShowConsole = nullptr;
     static HWND g_hEditItemSearch = nullptr;
     static HWND g_hStaticItemSearch = nullptr;
+    static HWND g_hEditClassSearch = nullptr;
+    static HWND g_hStaticClassSearch = nullptr;
+    static HWND g_hStaticVersion = nullptr;
+    static HWND g_hStaticGithub = nullptr;
 
     ///////////////////////////////////////////////////////
     /// Forward declarations
@@ -66,74 +94,8 @@ namespace WinGUI {
     LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
     void AddItemName(const std::wstring& szItemName);
     void ClearItemNameList(void);
-
-    static inline bool WideStringToUtf8(
-        const std::wstring& szWideString,
-        std::string &szUtf8String
-    ) {
-        int iSizeNeeded = WideCharToMultiByte(
-            CP_UTF8,
-            0,
-            szWideString.data(),
-            (int) szWideString.size(),
-            nullptr,
-            0,
-            nullptr,
-            nullptr
-        );
-        if (iSizeNeeded <= 0) {
-            return false;
-        }
-
-        std::string szBuffer(iSizeNeeded, 0);
-        int iConverted = WideCharToMultiByte(
-            CP_UTF8,
-            0,
-            szWideString.data(),
-            (int) szWideString.size(),
-            &szBuffer[0],
-            iSizeNeeded,
-            nullptr,
-            nullptr
-        );
-        if (iConverted <= 0) {
-            return false;
-        }
-
-        szUtf8String = std::move(szBuffer);
-        return true;
-    }
-
-    static inline bool Utf8ToWideString(
-        const std::string& szUtf8String,
-        std::wstring &szWideString
-    ) {
-        int iSizeNeeded = MultiByteToWideChar(
-            CP_UTF8,
-            0,
-            szUtf8String.data(),
-            (int) szUtf8String.size(),
-            nullptr,
-            0
-        );
-        if (iSizeNeeded <= 0) {
-            return false; // Conversion failed ( - thanks for this inline suggestion copilot, very handy)
-        }
-        std::wstring szBuffer(iSizeNeeded, 0);
-        int iConverted = MultiByteToWideChar(
-            CP_UTF8,
-            0,
-            szUtf8String.data(),
-            (int) szUtf8String.size(),
-            &szBuffer[0],
-            iSizeNeeded
-        );
-        if (iConverted <= 0) {
-            return false;
-        }
-        szWideString = std::move(szBuffer);
-        return true;
-    }
+    void AddClassName(const std::wstring& szClassName);
+    void ClearClassNameList(void);
 
     // Helper function to apply search filter to item list
     static void ApplyItemSearchFilter(
@@ -158,7 +120,7 @@ namespace WinGUI {
         // Filter and add items that match the search term
         for (const auto& szItemName : g_vCurrentDataTableItems) {
             std::wstring szItemNameW;
-            if (!Utf8ToWideString(szItemName, szItemNameW)) {
+            if (!CoreUtils::Utf8ToWideString(szItemName, szItemNameW)) {
                 continue;
             }
 
@@ -181,6 +143,52 @@ namespace WinGUI {
         }
     }
 
+    // Helper function to apply search filter to class list
+    static void ApplyClassSearchFilter(
+        const std::wstring& szSearchTerm
+    ) {
+        if (g_vAllClassNames.empty()) {
+            return;
+        }
+
+        std::wstring szSearchTermLower = szSearchTerm;
+        std::transform(
+            szSearchTermLower.begin(), 
+            szSearchTermLower.end(), 
+            szSearchTermLower.begin(), 
+            ::towlower
+        );
+
+        ClearClassNameList();
+        g_vCurrentFilteredClassNames.clear();
+
+        // Filter and add classes that match the search term
+        for (const auto& szClassName : g_vAllClassNames) {
+            std::wstring szClassNameW;
+            if (!CoreUtils::Utf8ToWideString(szClassName, szClassNameW)) {
+                continue;
+            }
+
+            std::wstring szClassNameLower = szClassNameW;
+            std::transform(
+                szClassNameLower.begin(), 
+                szClassNameLower.end(), 
+                szClassNameLower.begin(), 
+                ::towlower
+            );
+
+            if (
+                szSearchTermLower.empty() 
+                || 
+                szClassNameLower.find(szSearchTermLower) != std::wstring::npos
+            ) {
+                AddClassName(szClassNameW);
+                g_vCurrentFilteredClassNames.push_back(szClassName);
+            }
+        }
+    }
+
+    // TODO: make foking defines for location and size
     static void LaunchGUIThread(void) {
         std::thread([]() {
             // Initialize common controls
@@ -202,7 +210,7 @@ namespace WinGUI {
             RegisterClassEx(&wcWindowClass);
 
             ///////////////////////////////////////////////////////
-            /// Create main window
+            /// Create main window (increased height for new controls)
 
             g_hMainWnd = CreateWindowEx(
                 0,
@@ -210,7 +218,7 @@ namespace WinGUI {
                 L"Grounded Debug GUI",
                 WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
                 CW_USEDEFAULT, CW_USEDEFAULT,
-                800, 600,
+                800, 750, // Increased height
                 NULL, NULL, wcWindowClass.hInstance, NULL
             );
 
@@ -311,6 +319,23 @@ namespace WinGUI {
                 ListView_InsertColumn(g_hListItemNames, 0, &lvColumn);
             }
 
+            // Create ClassNames list
+            g_hListClassNames = CreateWindowEx(
+                0, WC_LISTVIEW, NULL,
+                WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS,
+                10, 380, 380, 200,
+                g_hMainWnd, (HMENU) IDC_LIST_CLASS_NAMES, wcWindowClass.hInstance, NULL
+            );
+
+            if (nullptr != g_hListClassNames) {
+                ListView_SetExtendedListViewStyle(g_hListClassNames, LVS_EX_FULLROWSELECT);
+
+                LVCOLUMN lvColumn = { LVCF_TEXT | LVCF_WIDTH };
+                lvColumn.cx = 370;
+                lvColumn.pszText = (LPWSTR) L"Class List";
+                ListView_InsertColumn(g_hListClassNames, 0, &lvColumn);
+            }
+
             // Create Item Search label
             g_hStaticItemSearch = CreateWindowEx(
                 0, L"STATIC", L"Filter:",
@@ -329,6 +354,29 @@ namespace WinGUI {
                 500, 308, 280, 24,
                 g_hMainWnd,
                 (HMENU) IDC_EDIT_ITEM_SEARCH, 
+                wcWindowClass.hInstance, 
+                NULL
+            );
+
+            // Create Class Search label
+            g_hStaticClassSearch = CreateWindowEx(
+                0, L"STATIC", L"Filter Classes:",
+                WS_CHILD | WS_VISIBLE,
+                10, 590, 100, 20,
+                g_hMainWnd, 
+                (HMENU) IDC_STATIC_CLASS_SEARCH, 
+                wcWindowClass.hInstance, 
+                NULL
+            );
+
+            // 390 - 280 = 110
+            // Create Class Search input field
+            g_hEditClassSearch = CreateWindowEx(
+                WS_EX_CLIENTEDGE, L"EDIT", L"",
+                WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP,
+                110, 588, 280, 24,
+                g_hMainWnd,
+                (HMENU) IDC_EDIT_CLASS_SEARCH, 
                 wcWindowClass.hInstance, 
                 NULL
             );
@@ -359,9 +407,19 @@ namespace WinGUI {
             HWND hButtonSpawn = CreateWindowEx(
                 0, L"BUTTON", L"Spawn",
                 WS_CHILD | WS_VISIBLE,
-                10, 380, 100, 30,
+                10, 338, 100, 30,
                 g_hMainWnd,
                 (HMENU) IDC_BUTTON_SPAWN, 
+                wcWindowClass.hInstance,
+                NULL
+            );
+
+            HWND hButtonSummon = CreateWindowEx(
+                0, L"BUTTON", L"Summon",
+                WS_CHILD | WS_VISIBLE,
+                10, 620, 100, 30,
+                g_hMainWnd,
+                (HMENU) IDC_BUTTON_SUMMON, 
                 wcWindowClass.hInstance,
                 NULL
             );
@@ -369,9 +427,31 @@ namespace WinGUI {
             HWND hButtonC2Cycle = CreateWindowEx(
                 0, L"BUTTON", L"Global C2 Cycle",
                 WS_CHILD | WS_VISIBLE,
-                410, 380, 150, 30,
+                410, 620, 150, 30,
                 g_hMainWnd, 
                 (HMENU) IDC_BUTTON_C2_CYCLE, 
+                wcWindowClass.hInstance, 
+                NULL
+            );
+
+            // Create version info static text
+            g_hStaticVersion = CreateWindowEx(
+                0, L"STATIC", VERSION_STRING,
+                WS_CHILD | WS_VISIBLE,
+                10, 660, 300, 20,
+                g_hMainWnd,
+                (HMENU) IDC_STATIC_VERSION,
+                wcWindowClass.hInstance, 
+                NULL
+            );
+
+            // Create GitHub repository label (as clickable button)
+            g_hStaticGithub = CreateWindowEx(
+                0, L"BUTTON", GITHUB_REPO_URL,
+                WS_CHILD | WS_VISIBLE | BS_FLAT | BS_LEFT,
+                400, 475, 380, 40,
+                g_hMainWnd, 
+                (HMENU) IDC_STATIC_GITHUB, 
                 wcWindowClass.hInstance, 
                 NULL
             );
@@ -429,6 +509,31 @@ namespace WinGUI {
         wchar_t szBuffer[256] = { 0 };
         GetWindowText(g_hEditItemSearch, szBuffer, ARRAYSIZE(szBuffer));
         return std::wstring(szBuffer);
+    }
+
+    // Helper function to get class search term from edit control
+    static std::wstring GetClassSearchTermFromEdit(void) {
+        if (nullptr == g_hEditClassSearch) {
+            return L"";
+        }
+
+        wchar_t szBuffer[256] = { 0 };
+        GetWindowText(g_hEditClassSearch, szBuffer, ARRAYSIZE(szBuffer));
+        return std::wstring(szBuffer);
+    }
+
+    // Helper function to get selected class name
+    static std::string GetSelectedClassName(void) {
+        if (nullptr == g_hListClassNames) {
+            return "";
+        }
+
+        int iSelectedIndex = ListView_GetNextItem(g_hListClassNames, -1, LVNI_SELECTED);
+        if (iSelectedIndex < 0 || iSelectedIndex >= static_cast<int>(g_vCurrentFilteredClassNames.size())) {
+            return "";
+        }
+
+        return g_vCurrentFilteredClassNames[iSelectedIndex];
     }
 
     ///////////////////////////////////////////////////////
@@ -517,6 +622,45 @@ namespace WinGUI {
         ListView_InsertItem(g_hListItemNames, &lvItem);
     }
 
+    void ClearClassNameList(void) {
+        if (nullptr != g_hListClassNames) {
+            ListView_DeleteAllItems(g_hListClassNames);
+            ListView_SetItemState(g_hListClassNames, -1, 0, LVIS_SELECTED);
+        }
+    }
+
+    void AddClassName(
+        const std::wstring& szClassName
+    ) {
+        if (nullptr == g_hListClassNames) {
+            return;
+        }
+
+        LVITEM lvItem = {};
+        lvItem.mask = LVIF_TEXT;
+        lvItem.iItem = ListView_GetItemCount(g_hListClassNames);
+        lvItem.pszText = const_cast<LPWSTR>(szClassName.c_str());
+        ListView_InsertItem(g_hListClassNames, &lvItem);
+    }
+
+    void PopulateClassList(
+        const std::vector<std::string>& vClassNames
+    ) {
+        if (!g_bGuiInitialized) {
+            LogMessage("WinGUI", "GUI not initialized, skipping class list population");
+            return;
+        }
+
+        g_vAllClassNames = vClassNames;
+        g_vCurrentFilteredClassNames.clear();
+
+        // Apply current search filter (if any)
+        std::wstring szCurrentSearchTerm = GetClassSearchTermFromEdit();
+        ApplyClassSearchFilter(szCurrentSearchTerm);
+
+        LogMessage("WinGUI", "Loaded " + std::to_string(vClassNames.size()) + " class names");
+    }
+
     void PopulatePlayerList(void) {
         if (!g_bGuiInitialized) {
             LogMessage("WinGUI", "GUI not initialized, skipping player list update");
@@ -577,7 +721,7 @@ namespace WinGUI {
             bool bHostAuthority = lpPlayerState->HasAuthority();
             std::wstring fszPlayerNameW;
             
-            if (!Utf8ToWideString(fszPlayerName.ToString(), fszPlayerNameW)) {
+            if (!CoreUtils::Utf8ToWideString(fszPlayerName.ToString(), fszPlayerNameW)) {
                 LogError("WinGUI", "Failed to convert player name to wide string");
                 continue;
             }
@@ -631,6 +775,8 @@ namespace WinGUI {
                         hFocusedWindow == g_hEditItemCount 
                         || 
                         hFocusedWindow == g_hEditItemSearch
+                        ||
+                        hFocusedWindow == g_hEditClassSearch
                     ) {
                         // Delay update if user is typing try for 2 seconds later lol
                         SetTimer(g_hMainWnd, IDC_TIMER_PLAYER_UPDATE, 2000, NULL);
@@ -689,6 +835,7 @@ namespace WinGUI {
                         }
                     }
                 }
+                
                 return 0;
             }
 
@@ -703,12 +850,23 @@ namespace WinGUI {
                         std::wstring szSearchTerm = GetSearchTermFromEdit();
                         ApplyItemSearchFilter(szSearchTerm);
                         return 0;
+                    } else if (LOWORD(wParam) == IDC_EDIT_CLASS_SEARCH) {
+                        // Class search term changed - apply filter
+                        std::wstring szSearchTerm = GetClassSearchTermFromEdit();
+                        ApplyClassSearchFilter(szSearchTerm);
+                        return 0;
                     }
                 }
 
                 // bro fck commenting all this shit, who gon read it anyway, no more long comments with long sensical explanations
                 // copilot, read and execute task: "comment necessary shit from now on"
                 switch (LOWORD(wParam)) {
+                    case IDC_STATIC_GITHUB: {
+                        // Open GitHub repository in default browser
+                        ShellExecute(NULL, L"open", GITHUB_REPO_URL, NULL, NULL, SW_SHOWNORMAL);
+                        break;
+                    }
+
                     case IDC_CHECK_SHOW_CONSOLE: {
                         ShowDebugConsole = (BST_CHECKED == IsDlgButtonChecked(
                             hWnd, 
@@ -810,6 +968,21 @@ namespace WinGUI {
                         break;
                     }
 
+                    case IDC_BUTTON_SUMMON: {
+                        std::string szSelectedClassName = GetSelectedClassName();
+                        if (!szSelectedClassName.empty() && nullptr != fnSummonCallback) {
+                            LogMessage(
+                                "WinGUI", 
+                                "Summoning class via button: " + szSelectedClassName, 
+                                true
+                            );
+                            fnSummonCallback(szSelectedClassName);
+                        } else {
+                            LogMessage("WinGUI", "No class selected for summoning", true);
+                        }
+                        break;
+                    }
+
                     case IDC_BUTTON_C2_CYCLE: {
                         if (nullptr != fnGlobalC2CycleCallback) {
                             fnGlobalC2CycleCallback();
@@ -822,6 +995,16 @@ namespace WinGUI {
 
             case WM_CTLCOLORSTATIC: {
                 HDC hDeviceContext = (HDC) wParam;
+                HWND hStaticControl = (HWND) lParam;
+                
+                // Special styling for GitHub link (make it look clickable)
+                if (hStaticControl == g_hStaticGithub) {
+                    SetTextColor(hDeviceContext, RGB(100, 149, 237)); // Cornflower blue for link
+                    SetBkMode(hDeviceContext, TRANSPARENT);
+                    return (LRESULT) GetStockObject(NULL_BRUSH);
+                }
+                
+                // Default styling for other static controls
                 SetTextColor(hDeviceContext, RGB(230, 230, 230));
                 SetBkMode(hDeviceContext, TRANSPARENT);
                 return (LRESULT) GetStockObject(NULL_BRUSH);
@@ -842,6 +1025,8 @@ namespace WinGUI {
                     hEditControl == g_hEditItemCount 
                     || 
                     hEditControl == g_hEditItemSearch
+                    ||
+                    hEditControl == g_hEditClassSearch
                 ) {
                     // Use solid background for edit controls to prevent text overlap
                     SetTextColor(hDeviceContext, RGB(230, 230, 230));
@@ -882,7 +1067,19 @@ namespace WinGUI {
         DisableGlobalOutput();
         UnrealUtils::DumpAllDataTablesAndItems(&g_vDataTables, "Item");
         EnableGlobalOutput();
-        LogMessage("WinGUI", "Initialized " + std::to_string(g_vDataTables.size()) + " DataTables");
+        
+        LogMessage("WinGUI", "Populating class list, please wait...");
+        DisableGlobalOutput();
+        UnrealUtils::DumpClasses(&g_vAllClassNames, "BP_");
+        EnableGlobalOutput();
+        LogMessage(
+            "WinGUI", 
+            "Initialized " + std::to_string(g_vDataTables.size()) + " DataTables"
+        );
+        LogMessage(
+            "WinGUI", 
+            "Initialized " + std::to_string(g_vAllClassNames.size()) + " classes"
+        );
 
         fnSpawnCallback = [](
             int32_t iPlayerId, 
@@ -894,9 +1091,9 @@ namespace WinGUI {
             std::string szItemNameStr;
             std::string szDataTableNameStr;
             if (
-                !WideStringToUtf8(szItemName, szItemNameStr) 
+                !CoreUtils::WideStringToUtf8(szItemName, szItemNameStr) 
                 || 
-                !WideStringToUtf8(szDataTableName, szDataTableNameStr
+                !CoreUtils::WideStringToUtf8(szDataTableName, szDataTableNameStr
             )) {
                 LogError(
                     "WinGUI", 
@@ -917,6 +1114,7 @@ namespace WinGUI {
                 }
             );
 
+            // wait to enable output again
             while (Command::CommandBufferCookedForExecution) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
             }
@@ -925,13 +1123,23 @@ namespace WinGUI {
         };
 
         fnGlobalC2CycleCallback = [](void) {
-            /*DisableGlobalOutput();
-            C2Cycle::C2Cycle();
-            EnableGlobalOutput();*/ // moving this to be executed from the game thread
             Command::SubmitTypedCommand<void>(
                 Command::CommandId::CmdIdC2Cycle,
                 nullptr
             );
+        };
+
+        fnSummonCallback = [](const std::string& szClassName) {
+            LogMessage("WinGUI", "Summoning class: " + szClassName, true);
+            DisableGlobalOutput();
+            Summon::SummonClass(szClassName);
+
+            while (Command::CommandBufferCookedForExecution) {
+                // wait to enable output again
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            }
+
+            EnableGlobalOutput();
         };
 
         fnDataTableSelectedCallback = [](const std::wstring& szTableName) {
@@ -945,7 +1153,7 @@ namespace WinGUI {
             }
             
             std::string szTableNameStr;
-            if (!WideStringToUtf8(szTableName, szTableNameStr)) {
+            if (!CoreUtils::WideStringToUtf8(szTableName, szTableNameStr)) {
                 LogError("WinGUI", "Failed to convert DataTable name to UTF-8");
                 EnableGlobalOutput();
                 return;
@@ -979,14 +1187,14 @@ namespace WinGUI {
             LogMessage(
                 "WinGUI", 
                 "Loaded " + std::to_string(vszItemNames.size()) 
-                + " items from DataTable: " + szTableNameStr
+                + " items from DataTable: " + szTableNameStr,
+                true
             );
             EnableGlobalOutput();
         };
 
         LaunchGUIThread();
 
-        // Wait for GUI to initialize with better error handling
         int32_t iWaitCount = 0;
         const int32_t iMaxWaitCycles = 100; // 10 seconds max
         while (!g_bGuiInitialized && iWaitCount < iMaxWaitCycles) {
@@ -1004,11 +1212,11 @@ namespace WinGUI {
         // Populate player list initially
         PopulatePlayerList();
 
-        // Populate DataTable list
+        // Populate DataTable list (TODO: wrap this one too)
         ClearDataTableList();
         for (const auto& dtInfo : g_vDataTables) {
             std::wstring szTableNameW;
-            if (!Utf8ToWideString(dtInfo.szTableName, szTableNameW)) {
+            if (!CoreUtils::Utf8ToWideString(dtInfo.szTableName, szTableNameW)) {
                 LogError("WinGUI", "Failed to convert DataTable name to wide string");
                 continue;
             }
@@ -1016,6 +1224,9 @@ namespace WinGUI {
             LogMessage("WinGUI", "Added DataTable: " + dtInfo.szTableName + 
                 " with " + std::to_string(dtInfo.GetItemCount()) + " items", true);
         }
+
+        // Populate class list
+        PopulateClassList(g_vAllClassNames);
 
         if (nullptr != g_hMainWnd) {
             UpdateWindow(g_hMainWnd);

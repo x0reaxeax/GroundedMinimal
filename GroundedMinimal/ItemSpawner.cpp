@@ -264,7 +264,7 @@ namespace ItemSpawner {
         );
 
         // Create command parameters
-        auto* lpParams = new (std::nothrow) ItemSpawner::BufferParamsSpawnItem{
+        auto* lpParams = new (std::nothrow) BufferParamsSpawnItem{
             .iPlayerId = lpMessageData->iSenderId,
             .szItemName = szTargetItemName,
             .szDataTableName = szDataTableName,

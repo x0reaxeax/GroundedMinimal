@@ -22,8 +22,9 @@ namespace Command {
         CmdIdNone = 0,
         CmdIdSpawnItem,
         CmdIdEnumPlayers,
-        CmdIdCullItem,
+        CmdIdCullItemInstance,
         CmdIdC2Cycle,
+        CmdIdSummon,
         CmdIdMax
     };
 

@@ -34,6 +34,12 @@ namespace UnrealUtils {
         VOID
     );
 
+    void DumpClasses(
+        std::vector<std::string>* vszClassesOut = nullptr,
+        const std::string& szTargetClassNameNeedle = "",
+        bool bOnlyBlueprints = false
+    );
+
     void DumpFunctions(
         const std::string& szTargetFunctionNameNeedle
     );

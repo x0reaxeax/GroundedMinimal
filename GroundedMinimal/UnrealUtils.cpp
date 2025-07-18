@@ -33,6 +33,48 @@ namespace UnrealUtils {
         return static_cast<SDK::ABP_SurvivalPlayerCharacter_C*>(lpPawn);
     }
 
+    void DumpClasses(
+        std::vector<std::string>* vszClassesOut,
+        const std::string& szTargetClassNameNeedle,
+        bool bOnlyBlueprints
+    ) {
+        std::string szBlueprintClassPrefix = "BP_";
+        for (int32_t i = 0; i < SDK::UClass::GObjects->Num(); i++) {
+            SDK::UObject* lpObj = SDK::UClass::GObjects->GetByIndex(i);
+            if (nullptr == lpObj) {
+                continue;
+            }
+            if (!lpObj->IsA(SDK::UClass::StaticClass())) {
+                continue;
+            }
+
+            if (bOnlyBlueprints) {
+                if (!StringContainsCaseInsensitive(
+                    lpObj->GetFullName(),
+                    szBlueprintClassPrefix
+                )) {
+                    continue; // skip non-blueprint classes
+                }
+            }
+
+            if (!szTargetClassNameNeedle.empty()) {
+                if (!StringContainsCaseInsensitive(
+                    lpObj->GetFullName(),
+                    szTargetClassNameNeedle
+                )) {
+                    continue; // skip classes that don't match the needle
+                }
+            }
+
+            SDK::UClass *lpClass = static_cast<SDK::UClass*>(lpObj);
+            LogMessage("Dump", "Found class: '" + lpClass->GetName() + "'");
+            if (nullptr != vszClassesOut) {
+                std::string szClassShortName = lpClass->GetName();
+                vszClassesOut->push_back(szClassShortName);
+            }
+        }
+    }
+
     void DumpFunctions(
         const std::string& szTargetFunctionNameNeedle
     ) {

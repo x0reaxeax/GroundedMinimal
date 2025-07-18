@@ -2,8 +2,10 @@
 // Copyright (C) 2025 x0reaxeax
 
 #include "ItemSpawner.hpp"
+#include "CoreUtils.hpp"
 #include "C2Cycle.hpp"
 #include "Command.hpp"
+#include "Summon.hpp"
 #include <iostream>
 
 namespace Command {
@@ -35,6 +37,11 @@ namespace Command {
         switch (localBuffer.Id) {
             case CommandId::CmdIdSpawnItem: {    
                 LogMessage("ProcessEvent", "Command: Spawn Item");
+
+                if (nullptr == localBuffer.Params) {
+                    LogError("ProcessEvent", "CmdIdSpawnItem: Params are null");
+                    break;
+                }
                 
                 auto* lpParams = static_cast<ItemSpawner::BufferParamsSpawnItem*>(localBuffer.Params);
                 bool bRet = ItemSpawner::GiveItemToPlayer(
@@ -60,6 +67,58 @@ namespace Command {
 
                 C2Cycle::C2Cycle();
                 break;
+            }
+
+            case CommandId::CmdIdSummon: {
+                LogMessage("ProcessEvent", "Command: Summon Item");
+
+                if (nullptr == localBuffer.Params) {
+                    LogError("ProcessEvent", "CmdIdSummon: Params are null");
+                    break;
+                }
+
+                Summon::BufferParamsSummon* lpParams = static_cast<Summon::BufferParamsSummon*>(localBuffer.Params);
+                if (nullptr == lpParams->lpLocalPlayerController) {
+                    LogError("ProcessEvent", "CmdIdSummon: LocalPlayerController is null");
+                    break;
+                }
+
+                lpParams->lpLocalPlayerController->EnableCheats();
+
+                SDK::UCheatManager *lpCheatManager = lpParams->lpLocalPlayerController->CheatManager;
+                if (nullptr == lpCheatManager) {
+                    LogError("ProcessEvent", "CmdIdSummon: CheatManager is null");
+                    break;
+                }
+
+                lpCheatManager->Summon(
+                    lpParams->fszClassName
+                );
+
+                LogMessage(
+                    "ProcessEvent", 
+                    "Summon - Player ID: " + std::to_string(lpParams->iPlayerId) + 
+                    ", Class: " + lpParams->fszClassName.ToString()
+                );
+
+                break;
+            }
+
+            case CommandId::CmdIdCullItemInstance: {
+                LogMessage("ProcessEvent", "Command: Cull Item");
+                if (nullptr == localBuffer.Params) {
+                    LogError("ProcessEvent", "CmdIdCullItem: Params are null");
+                    break;
+                }
+                C2Cycle::BufferParamsCullItem* lpParams = static_cast<C2Cycle::BufferParamsCullItem*>(localBuffer.Params);
+                if (nullptr == lpParams->lpItemInstance) {
+                    LogError("ProcessEvent", "CmdIdCullItem: Item instance is null");
+                    break;
+                }
+
+                C2Cycle::CullItemInstance(lpParams->lpItemInstance);
+                break;
+
             }
 
             default: {
