@@ -107,7 +107,7 @@
 | `BlackOxPart` |  |
 | `Lint` |  |
 | `Burr` |  |
-| `CrystalShell` |  |
+| `CrystalShell` | Twinkling Shell |
 | `WoodSplinter` |  |
 | `RolyPolyShell` |  |
 | `RolyPolyPart` |  |
