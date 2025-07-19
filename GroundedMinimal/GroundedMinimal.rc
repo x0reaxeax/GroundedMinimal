@@ -17,6 +17,7 @@
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -50,8 +51,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION 1,1,2,0
-PRODUCTVERSION 1,1,2,0
+FILEVERSION 1,2,4,0
+PRODUCTVERSION 1,2,4,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -68,12 +69,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "x0reaxeax"
             VALUE "FileDescription", "GroundedMinimal Tool"
-            VALUE "FileVersion", "1.1.2.0"
+            VALUE "FileVersion", "1.2.4.0"
             VALUE "InternalName", "GroundedAntDiet"
             VALUE "LegalCopyright", "Copyright (C) 2025 x0reaxeax"
             VALUE "OriginalFilename", "GroundedMinimal.dll"
             VALUE "ProductName", "GroundedMinimal"
-            VALUE "ProductVersion", "1.1.2.0"
+            VALUE "ProductVersion", "1.2.4.0"
         END
     END
     BLOCK "VarFileInfo"
@@ -96,6 +97,5 @@ END
 
 /////////////////////////////////////////////////////////////////////////////
 #endif    // not APSTUDIO_INVOKED
-
 
 
