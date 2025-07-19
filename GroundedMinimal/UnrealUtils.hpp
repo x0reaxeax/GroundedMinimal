@@ -107,6 +107,8 @@ namespace UnrealUtils {
         std::vector<DataTableInfo> *vlpDataTableInfoOut = nullptr,
         const std::string& szDataTableFilterNeedle = ""
     );
+
+    void UnlockMultiplayerCheatManager(void);
 };
 
 #endif // _GROUNDED_UNREAL_UTILS_HPP

@@ -2,6 +2,7 @@
 // Copyright (C) 2025 x0reaxeax
 
 #include "ItemSpawner.hpp"
+#include "UnrealUtils.hpp"
 #include "CoreUtils.hpp"
 #include "C2Cycle.hpp"
 #include "Command.hpp"
@@ -87,7 +88,26 @@ namespace Command {
 
                 SDK::UCheatManager *lpCheatManager = lpParams->lpLocalPlayerController->CheatManager;
                 if (nullptr == lpCheatManager) {
-                    LogError("ProcessEvent", "CmdIdSummon: CheatManager is null");
+                    LogError(
+                        "ProcessEvent", 
+                        "CmdIdSummon: CheatManager is null, attempting to force-unlock.."
+                    );
+
+                    UnrealUtils::UnlockMultiplayerCheatManager();
+
+                    // retry enabling cheats
+                    lpParams->lpLocalPlayerController->EnableCheats();
+
+                    lpCheatManager = lpParams->lpLocalPlayerController->CheatManager;
+                    break;
+                }
+
+                // check again if CheatManager is still null after unlock attempt
+                if (nullptr == lpCheatManager) {
+                    LogError(
+                        "ProcessEvent",
+                        "CmdIdSummon: CheatManager is still null after unlock attempt, aborting.."
+                    );
                     break;
                 }
 

@@ -524,7 +524,8 @@ ConsoleCommand g_Commands[] = {
     {"X_DebugToggle", "Toggle debug mode", []() { 
         g_bDebug = !g_bDebug;
         LogMessage("Debug", "Debug mode " + std::string(g_bDebug ? "enabled" : "disabled"));
-    }}
+    }},
+    {"X_UnlockCheatManager", "DebugOnly", UnrealUtils::UnlockMultiplayerCheatManager }
 };
 
 // bruh

@@ -244,7 +244,11 @@ namespace ItemSpawner {
             return; // DataTable not found for the item
         }
 
-        if (!UnrealUtils::GetItemRowMap(lpAllItemsTable, szTargetItemName, nullptr)) {
+        if (!UnrealUtils::GetItemRowMap(
+            lpAllItemsTable, 
+            szTargetItemName, 
+            nullptr
+        )) {
             LogError(
                 "ItemSpawner", 
                 "Item '" + szTargetItemName + "' not found in DataTable: " + szDataTableName, 
