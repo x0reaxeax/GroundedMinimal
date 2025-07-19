@@ -4,10 +4,6 @@
 #ifndef _GROUNDED_MINIMAL_HPP
 #define _GROUNDED_MINIMAL_HPP
 
-#define ANTDIET_VERSION_MAJOR 1
-#define ANTDIET_VERSION_MINOR 1
-#define ANTDIET_VERSION_PATCH 0
-
 #include <Windows.h>
 
 //#include "SDK.hpp"
@@ -31,6 +27,13 @@
 #define DLLEXPORT __declspec(dllexport)
 #define GameThread  // Can only be executed from the game thread
 
+struct VersionInfo {
+    DWORD major;
+    DWORD minor;
+    DWORD patch;
+    DWORD build;
+};
+
 typedef void (*ProcessEvent_t)(const SDK::UObject *, SDK::UFunction *, LPVOID);
 
 typedef BOOL (WINAPI *MiniDumpReadDumpStream_t)(
@@ -53,6 +56,7 @@ typedef BOOL (WINAPI *MiniDumpWriteDump_t)(
 
 extern bool ShowDebugConsole;
 extern bool GlobalOutputEnabled;
+extern VersionInfo GroundedMinimalVersionInfo;
 
 ////////////////////////////////////
 /// Functions

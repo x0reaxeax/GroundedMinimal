@@ -48,11 +48,15 @@
 #include <algorithm>
 #include <cctype>
 
+#pragma comment (lib, "Version.lib")
+
 struct ConsoleCommand {
     std::string szCommand;
     std::string szDescription;
     void (*fnHandler)();
 };
+
+VersionInfo GroundedMinimalVersionInfo = { 0 };
 
 // Global bs (boolean settings, of course)
 bool ShowDebugConsole = true;
@@ -82,6 +86,49 @@ inline volatile bool CheckGlobalOutputEnabled(void) {
 /// Some helper stuff
 
 // yes these are wrapped, deal with it.
+
+bool GetVersionFromResource(
+    VersionInfo& versionInfo
+) {
+    HMODULE hModule = GetModuleHandleA("GroundedMinimal.dll");
+
+    HRSRC hResource = FindResource(
+        hModule,
+        MAKEINTRESOURCE(VS_VERSION_INFO),
+        RT_VERSION
+    );
+    if (nullptr == hResource) {
+        return false;
+    }
+
+    HGLOBAL hGlobal = LoadResource(hModule, hResource);
+    if (nullptr == hGlobal) {
+        return false;
+    }
+
+    LPVOID pVersionInfo = LockResource(hGlobal);
+    if (!pVersionInfo) {
+        return false;
+    }
+
+    VS_FIXEDFILEINFO* pFileInfo = nullptr;
+    UINT uiLen;
+
+    if (VerQueryValueW(
+        pVersionInfo,
+        L"\\",
+        (LPVOID*) &pFileInfo,
+        &uiLen
+    )) {
+        versionInfo.major = HIWORD(pFileInfo->dwFileVersionMS);
+        versionInfo.minor = LOWORD(pFileInfo->dwFileVersionMS);
+        versionInfo.patch = HIWORD(pFileInfo->dwFileVersionLS);
+        versionInfo.build = LOWORD(pFileInfo->dwFileVersionLS);
+        return true;
+    }
+
+    return false;
+}
 
 void EnableGlobalOutput(void) {
     GlobalOutputEnabled = true;
@@ -564,16 +611,30 @@ DWORD WINAPI ThreadEntry(
     LPVOID lpParam
 ) {
     HMODULE hLocalModule = static_cast<HMODULE>(lpParam);
-
     FILE *lpStdout = nullptr, *lpStderr = nullptr, *lpStdin = nullptr;
     AllocConsole();
     freopen_s(&lpStdout, "CONOUT$", "w", stdout);
     freopen_s(&lpStderr, "CONOUT$", "w", stderr);
     freopen_s(&lpStdin, "CONIN$", "r", stdin);
 
-    LogMessage("Init", "GroundedAntDiet: Starting hooks initialization...");
+    if (!GetVersionFromResource(
+        GroundedMinimalVersionInfo
+    )) {
+        LogError("Init", "Failed to retrieve version information from resources");
+    }
+
+    LogMessage(
+        "Init",
+        "GroundedMinimal: Version " +
+        std::to_string(GroundedMinimalVersionInfo.major) + "." +
+        std::to_string(GroundedMinimalVersionInfo.minor) + "." +
+        std::to_string(GroundedMinimalVersionInfo.patch) + "." +
+        std::to_string(GroundedMinimalVersionInfo.build)
+    );
+
+    LogMessage("Init", "GroundedMinimal: Starting hooks initialization...");
     while (nullptr == UnrealUtils::GetLocalPawn()) {
-        LogMessage("Init", "GroundedAntDiet: Waiting for LocalPawn to be available...");
+        LogMessage("Init", "GroundedMinimal: Waiting for LocalPawn to be available...");
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
 
@@ -582,7 +643,7 @@ DWORD WINAPI ThreadEntry(
         _HookedProcessEvent, 
         &OriginalProcessEvent
     )) {
-        LogError("Init", "GroundedAntDiet: Failed to hook LocalPawn ProcessEvent");
+        LogError("Init", "GroundedMinimal: Failed to hook LocalPawn ProcessEvent");
         return EXIT_FAILURE;
     }
 
@@ -591,19 +652,19 @@ DWORD WINAPI ThreadEntry(
         _HookedChatBoxProcessEvent, 
         &OriginalChatBoxWidgetProcessEvent
     )) {
-        LogError("Init", "GroundedAntDiet: Failed to hook ChatBoxWidget ProcessEvent");
+        LogError("Init", "GroundedMinimal: Failed to hook ChatBoxWidget ProcessEvent");
         goto _RYUJI; // lol
     }
 
-    LogMessage("Init", "GroundedAntDiet: Hooks initialized");
-    LogMessage("Init", "GroundedAntDiet: Launching GUI thread...");
+    LogMessage("Init", "GroundedMinimal: Hooks initialized");
+    LogMessage("Init", "GroundedMinimal: Launching GUI thread...");
 
     g_hConsole = GetConsoleWindow();
     if (!WinGUI::Initialize()) {
-        LogError("Init", "GroundedAntDiet: Failed to initialize GUI");
+        LogError("Init", "GroundedMinimal: Failed to initialize GUI");
         goto _RYUJI;
     }
-    LogMessage("Init", "GroundedAntDiet: GUI thread launched successfully");
+    LogMessage("Init", "GroundedMinimal: GUI thread launched successfully");
 
     while (g_bRunning) {
         const int32_t iMaxWaitMs = 60000; // Wait for a maximum of 60 seconds, then cap a bro

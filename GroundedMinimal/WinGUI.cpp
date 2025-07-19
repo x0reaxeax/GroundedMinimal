@@ -19,11 +19,6 @@
 
 ///////////////////////////////////////////////////////
 /// Version and repository info
-
-// TODO: use VerQueryValueA/W or something to read this bih from rc file
-#define _STRINGIFY(x) #x
-#define _TOSTRING(x) _STRINGIFY(x)
-#define VERSION_STRING L"GroundedMinimal v" _TOSTRING(ANTDIET_VERSION_MAJOR) "." _TOSTRING(ANTDIET_VERSION_MINOR) "." _TOSTRING(ANTDIET_VERSION_PATCH)
 #define GITHUB_REPO_URL L"https://github.com/x0reaxeax/GroundedMinimal"
 
 // Control IDs
@@ -51,6 +46,8 @@
 namespace WinGUI {
     ///////////////////////////////////////////////////////
     /// Globals
+
+    wchar_t g_szVersionString[64] = { 0 };
 
     std::function<void(int32_t, const std::wstring&, const std::wstring&, int32_t)> fnSpawnCallback = nullptr;
     std::function<void()> fnGlobalC2CycleCallback = nullptr;
@@ -437,7 +434,7 @@ namespace WinGUI {
 
             // Create version info static text
             g_hStaticVersion = CreateWindowEx(
-                0, L"STATIC", VERSION_STRING,
+                0, L"STATIC", g_szVersionString,
                 WS_CHILD | WS_VISIBLE,
                 10, 660, 300, 20,
                 g_hMainWnd,
@@ -1064,6 +1061,16 @@ namespace WinGUI {
     }
 
     bool Initialize(void) {
+        LogMessage("WinGUI", "Initializing WinGUI...");
+        _snwprintf_s(
+            g_szVersionString,
+            ARRAYSIZE(g_szVersionString),
+            L"GroundedMinimal %u.%u.%u",
+            GroundedMinimalVersionInfo.major,
+            GroundedMinimalVersionInfo.minor,
+            GroundedMinimalVersionInfo.patch
+        );
+
         LogMessage("WinGUI", "Populating item list, please wait...");
         DisableGlobalOutput();
         UnrealUtils::DumpAllDataTablesAndItems(&g_vDataTables, "Item");
