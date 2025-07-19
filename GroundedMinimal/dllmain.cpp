@@ -517,15 +517,27 @@ ConsoleCommand g_Commands[] = {
     {"I_SpawnItem", "Spawn item", HandleSpawnItem },
     {"P_ShowPlayers", "Show connected players", []() { UnrealUtils::DumpConnectedPlayers(); }},
     {"S_SummonClass", "Summon an internal class", HandleSummon },
-    {"X_GlobalCheatMode", "Toggle global cheat mode", []() { 
+    {
+        "X_GlobalCheatMode", "Toggle global cheat mode", []() { 
         ItemSpawner::GlobalCheatMode = !ItemSpawner::GlobalCheatMode;
-        LogMessage("Cheat", "Global cheat mode " + std::string(ItemSpawner::GlobalCheatMode ? "enabled" : "disabled"));
+        LogMessage(
+            "Cheat", 
+            "Global cheat mode " + std::string(ItemSpawner::GlobalCheatMode ? "enabled" : "disabled")
+        );
     }},
-    {"X_DebugToggle", "Toggle debug mode", []() { 
+    {
+        "X_DebugToggle", "Toggle debug mode", []() { 
         g_bDebug = !g_bDebug;
-        LogMessage("Debug", "Debug mode " + std::string(g_bDebug ? "enabled" : "disabled"));
+        LogMessage(
+            "Debug", 
+            "Debug mode " + std::string(g_bDebug ? "enabled" : "disabled")
+        );
     }},
-    {"X_UnlockCheatManager", "DebugOnly", UnrealUtils::UnlockMultiplayerCheatManager }
+    {
+        "X_UnlockCheats", 
+        "Patch EnableCheats to skip multiplayer checks", 
+        UnrealUtils::UnlockMultiplayerCheatManager 
+    }
 };
 
 // bruh

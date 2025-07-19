@@ -20,7 +20,7 @@ However, in case of multiplayer lobbies, only the LOBBY HOST should use this.**
 ## Features
  - **C2Cycle (TM pending):** A "fix" for massive amount of clumped AntHill food chunks. Features automated "Collect and Cull" cycles, which detect big amounts of clumped food items inside various "hotspots" on the map, and clean them up. Also features the worst possible existing algorithm that a sentient being could use.
  - **Item Spawner:** Allows either the host of the game lobby, but optionally also all connected players to spawn game items into their inventories.
- - **Class Summon:** (SinglePlayer only) Internal `CheatManager` summon command for internal classes. Can summon JuiceBoxes with this! (gl not getting stuck in them)
+ - **Class Summon:** Internal `CheatManager` summon command for internal classes. Can summon JuiceBoxes with this! (gl not getting stuck in them)
  - **Debug Helpers:** Misc utils for dumping internal item names and data tables, as well as gathering lobby and player info.
  - **That's it:** Adheres to the "Minimal" part of the program's name.
 
@@ -78,7 +78,8 @@ Example: `/spawnitem DandelionPuff 10`
 Refer to [CLI Usage](#cli-usage).
 
 ### Summon
-SinglePlayer only class summoner.
+Internal `summon` CheatManager command for summoning internal classes.
+Now works in multiplayer too!
 Can easily crash the game when summoning weird stuff.
 Choose a class from the list of and click the 'Summon' button.
 
@@ -91,6 +92,7 @@ The debug console can be used to execute the following commands:
 | `H_GetAuthority`    | Checks if you're the host |
 | `X_DebugToggle`     | Toggles debug output (very spammy and performance heavy) |
 | `X_GlobalCheatMode` | Toggles Global Cheat Mode |
+| `X_UnlockCheats`    | Patches 'EnableCheats' function to skip multiplayer checks |
 | `P_ShowPlayers`     | Lists connected players |
 | `F_ClassDump`       | Finds all classes containing a given string needle |
 | `F_DataTableNeedle` | Finds all data tables containing a given string needle |
