@@ -157,9 +157,43 @@ File Index:
  - [Unreal Engine Documentation](https://dev.epicgames.com/documentation/en-us/unreal-engine) - Misc UE stuff.
  - [MS Docs](https://learn.microsoft.com/en-us/windows/win32/learnwin32/learn-to-program-for-windows--sample-code) - GUI skeleton copypasta.
 
+## FAQ
+**Q:** How is this different than using Universal Unreal Engine 4 Unlocker and using the summon command?
+**A:** Please refer to the following table:
+
+| Feature                                  | GroundedMinimal           | UUU |
+| ---------------------------------------- | ------------------------- | --- |
+| Spawn items in multiplayer               | Yes                       | No  |
+| Spawn items in custom quantity	          | Yes	                      | No  |
+| Spawn items directly into inventory	     | Yes                       |	No  |
+| Summon classes in multiplayer	           | Yes                       |	No  |
+| Open-Source	                             | Yes                       |	No  |
+| In-game chat commands	                   | Yes                       |	No  |
+
+*This is not a "dig" at UUU, the tool serves a completely different purpose.*
+*The main limitation of using UUU is that you can't summon in multiplayer.*
+
+**Q:** Can I get banned for using this tool?  
+**A:** No, there's no anti-cheat.  
+
+**Q:** My Anti-Virus software detected this as a threat, what do I do?  
+**A:** If you downloaded this tool from [GitHub Releases](https://github.com/x0reaxeax/GroundedMinimal/releases) or [NexusMods](https://www.nexusmods.com/grounded/mods/189), then this is a false positive, and you can ignore it.  
+
+**Q:** How can I trust that?  
+**A:** The tool is open-source, you can analyze the source code yourself, or ask AI to do so for you. Additionally, you can compile the tool yourself.  
+
+**Q:** I am crashing when using the tool.  
+**A:** Please submit a [bug report](https://github.com/x0reaxeax/GroundedMinimal/issues/new).  
+
+**Q:** Will an XYZ feature be added?  
+**A:** Unlikely, but not impossible. I will be mainly focused on Grounded 2.  
+
+**Q:** Why is this being released now, when Grounded 2 is dropping in less than 2 weeks?  
+**A:** Good question xD  
+
 ## Disclaimer
 This project is licensed under the [GNU General Public License v3.0](#license).  
-The content of this repository exists purely for educational purposes, and the author is not responsible for any damages caused by this software.
+The content of this repository exists purely for educational purposes, and the author is not responsible for any damages caused by this software.  
 
 ## License
     GroundedMinimal - Debugging tool for Grounded (Steam version)
