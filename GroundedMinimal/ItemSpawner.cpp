@@ -314,9 +314,10 @@ namespace ItemSpawner {
 
 _RYUJI:
         // Wait for command processing to complete
-        while (Command::CommandBufferCookedForExecution) {
+        /*while (Command::CommandBufferCookedForExecution) {
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        }
+        }*/
+        Command::WaitForCommandBufferReady();
 
         EnableGlobalOutput();
     }

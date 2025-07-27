@@ -24,6 +24,8 @@ namespace C2Cycle {
     // Determines if any player can execute C2Cycle via a chat command, great idea, right? xd
     extern bool GlobalC2Authority; 
 
+    extern std::atomic<bool> C2ThreadRunning;
+
     struct BufferParamsCullItem {
         SDK::ASpawnedItem* lpItemInstance;
     };
@@ -69,6 +71,9 @@ namespace C2Cycle {
     void CullAllItemInstances(
         std::string TargetItemTypeName
     );
+
+    void CreateC2CycleThread(void);
+    void StopC2CycleThread(void);
 
     void GameThread CullItemInstance(
         SDK::ASpawnedItem *lpItemToCull

@@ -160,6 +160,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="C2Cycle.cpp" />
+    <ClCompile Include="CheatManager.cpp" />
     <ClCompile Include="Command.cpp" />
     <ClCompile Include="CoreUtils.cpp" />
     <ClCompile Include="dbgcore.cpp" />
@@ -178,6 +179,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="C2Cycle.hpp" />
+    <ClInclude Include="CheatManager.hpp" />
     <ClInclude Include="Command.hpp" />
     <ClInclude Include="CoreUtils.hpp" />
     <ClInclude Include="GroundedMinimal.hpp" />

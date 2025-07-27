@@ -78,6 +78,7 @@ void ShowConsole(
     void
 );
 
+bool IsDebugModeEnabled(void);
 void EnableGlobalOutput(void);
 void DisableGlobalOutput(void);
 

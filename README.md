@@ -21,6 +21,7 @@ However, in case of multiplayer lobbies, only the LOBBY HOST should use this.**
  - **C2Cycle (TM pending):** A "fix" for massive amount of clumped AntHill food chunks. Features automated "Collect and Cull" cycles, which detect big amounts of clumped food items inside various "hotspots" on the map, and clean them up. Also features the worst possible existing algorithm that a sentient being could use.
  - **Item Spawner:** Allows either the host of the game lobby, but optionally also all connected players to spawn game items into their inventories.
  - **Class Summon:** Internal `CheatManager` summon command for internal classes. Can summon JuiceBoxes with this! (gl not getting stuck in them)
+ - **Cheat Manager:** Internal `CheatManager` invokes for stuff like adding molars, raw science, unlocking stuff, etc.
  - **Debug Helpers:** Misc utils for dumping internal item names and data tables, as well as gathering lobby and player info.
  - **That's it:** Adheres to the "Minimal" part of the program's name.
 
@@ -86,25 +87,26 @@ Choose a class from the list of and click the 'Summon' button.
 ## CLI Usage
 The debug console can be used to execute the following commands:
 
-| Command             | Description               |
-| -----------------   | --------------------------|
-| `C2`                | Triggers a C2Cycle |
-| `H_GetAuthority`    | Checks if you're the host |
-| `X_DebugToggle`     | Toggles debug output (very spammy and performance heavy) |
-| `X_GlobalCheatMode` | Toggles Global Cheat Mode |
-| `X_UnlockCheats`    | Patches 'EnableCheats' function to skip multiplayer checks |
-| `P_ShowPlayers`     | Lists connected players |
-| `F_ClassDump`       | Finds all classes containing a given string needle |
-| `F_DataTableNeedle` | Finds all data tables containing a given string needle |
-| `F_FindItemTable`   | Finds all data tables containing a given item name |
-| `F_FunctionDump`    | Finds all functions containing a given string needle |
-| `F_ItemDump`        | Finds all items within a given data table name |
-| `C_CullItem`        | Culls a specific item via the item's ID |
-| `C_CullItemType`    | Culls all items of a specific type (name) around the players |
-| `I_SpawnItem`       | Spawns a selected item into a selected player's inventory |
-| `S_SummonClass`     | Summons a selected class |
-| `<Item Name Needle>`| Searches for spawned items around the player by a given name needle (empty input displays all) |
-| `exit` or `quit`    | Unloads game hooks and exits the tool |
+| Command              | Description               |
+| -------------------- | ------------------------- |
+| `C2`                 | Triggers a C2Cycle |
+| `H_GetAuthority`     | Checks if you're the host |
+| `X_DebugToggle`      | Toggles debug output (very spammy and performance heavy) |
+| `X_GlobalCheatMode`  | Toggles Global Cheat Mode |
+| `X_UnlockCheats`     | Patches 'EnableCheats' function to skip multiplayer checks |
+| `X_InitCheatManager` | Initializes CheatManager |
+| `P_ShowPlayers`      | Lists connected players |
+| `F_ClassDump`        | Finds all classes containing a given string needle |
+| `F_DataTableNeedle`  | Finds all data tables containing a given string needle |
+| `F_FindItemTable`    | Finds all data tables containing a given item name |
+| `F_FunctionDump`     | Finds all functions containing a given string needle |
+| `F_ItemDump`         | Finds all items within a given data table name |
+| `C_CullItem`         | Culls a specific item via the item's ID |
+| `C_CullItemType`     | Culls all items of a specific type (name) around the players |
+| `I_SpawnItem`        | Spawns a selected item into a selected player's inventory |
+| `S_SummonClass`      | Summons a selected class |
+| `<Item Name Needle>` | Searches for spawned items around the player by a given name needle (empty input displays all) |
+| `exit` or `quit`     | Unloads game hooks and exits the tool |
 
 ## Building
 To build the project, you need to have a valid SDK dump generated via [Dumper-7](https://github.com/Encryqed/Dumper-7).  

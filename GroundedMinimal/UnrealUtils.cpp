@@ -595,155 +595,55 @@ namespace UnrealUtils {
         return -1;
     }
 
-    void UnlockMultiplayerCheatManager(void) {
-        const uintptr_t qwPatchSkipTargetOffset = 0x2F;         // Patch conditional jump with unconditional jump
-        const byte abySkipTargetCheck[] = {
-            0x48, 0x83, 0xBF, 0x70, 0x03, 0x00, 0x00, 0x00      // cmp qword ptr [rdi+370h], 0
-        };
-        const byte abyPatchSkipTarget[sizeof(abySkipTargetCheck)] = {
-            0xE9, 0x72, 0x00, 0x00, 0x00,                       // jmp 0x72 bytes forward
-            0x90, 0x90, 0x90                                    // 3x NOP
-        };
-
+    SDK::UGameInstance *GetOwningGameInstance(void) {
         SDK::UWorld *lpWorld = SDK::UWorld::GetWorld();
         if (nullptr == lpWorld) {
-            LogError("Summon", "Failed to get UWorld instance");
-            return;
+            LogError("GameInstance", "UWorld is NULL");
+            return nullptr;
+        }
+        SDK::UGameInstance *lpOwningGameInstance = lpWorld->OwningGameInstance;
+        if (nullptr == lpOwningGameInstance) {
+            LogError("GameInstance", "OwningGameInstance is NULL");
+            return nullptr;
+        }
+        return lpOwningGameInstance;
+    }
+
+    SDK::APlayerController *GetLocalPlayerController(void) {
+        SDK::UWorld *lpWorld = SDK::UWorld::GetWorld();
+        if (nullptr == lpWorld) {
+            LogError("PlayerController", "UWorld is NULL");
+            return nullptr;
         }
 
         SDK::UGameInstance *lpOwningGameInstance = lpWorld->OwningGameInstance;
         if (nullptr == lpOwningGameInstance) {
-            LogError("Summon", "Failed to get UGameInstance instance");
-            return;
+            LogError("PlayerController", "OwningGameInstance is NULL");
+            return nullptr;
         }
 
         int32_t iLocalPlayerId = UnrealUtils::GetLocalPlayerId();
-        SDK::APlayerController *lpLocalPlayerController = nullptr;
-        for (int32_t i = 0; i < lpOwningGameInstance->LocalPlayers.Num(); i++) {
+        for (int32_t i = 0; i < lpWorld->OwningGameInstance->LocalPlayers.Num(); i++) {
             SDK::ULocalPlayer *lpLocalPlayer = lpOwningGameInstance->LocalPlayers[i];
             if (nullptr == lpLocalPlayer) {
                 continue;
             }
 
-            lpLocalPlayerController = lpLocalPlayer->PlayerController;
-            if (nullptr != lpLocalPlayerController) {
-                break;
+            SDK::APlayerController *lpPlayerController = lpLocalPlayer->PlayerController;
+            if (nullptr == lpPlayerController) {
+                continue;
+            }
+
+            SDK::APlayerState *lpPlayerState = lpPlayerController->PlayerState;
+            if (nullptr == lpPlayerState) {
+                continue;
+            }
+
+            if (iLocalPlayerId == lpPlayerState->PlayerId) {
+                return lpPlayerController; // Found the local player controller
             }
         }
 
-        if (nullptr == lpLocalPlayerController) {
-            LogError("Summon", "Failed to get local player controller");
-            return;
-        }
-
-        LogMessage("EnableCheats", "Local player controller found, attempting to enable cheats...");
-
-        uintptr_t* lpvfTable = *(uintptr_t**) lpLocalPlayerController;
-
-        uintptr_t qwLevel1 = lpvfTable[0x14E];                  // = vtable[334] = trampoline
-        uintptr_t fnEnableCheatsImpl = lpvfTable[0xCF0 / 8];    // 414
-
-        LogMessage(
-            "EnableCheats",
-            "Found Level1 trampoline at "
-            + std::to_string(qwLevel1)
-        );
-
-        if (0 == fnEnableCheatsImpl) {
-            LogError("EnableCheats", "Failed to resolve EnableCheats function");
-            return;
-        }
-
-        LogMessage(
-            "EnableCheats",
-            "Found EnableCheatsImpl at "
-            + std::to_string(fnEnableCheatsImpl)
-        );
-
-        if (nullptr == lpLocalPlayerController->CheatClass) {
-            LogMessage(
-                "EnableCheats",
-                "CheatClass is NULL, attempting to assign it..."
-            );
-
-            SDK::UClass *lpCheatManagerClass = SDK::UCheatManager::StaticClass();
-            if (nullptr == lpCheatManagerClass) {
-                LogError("EnableCheats", "Failed to get CheatManager class");
-                return;
-            }
-
-            LogMessage(
-                "EnableCheats",
-                "Patching CheatClass to "
-                + std::to_string(reinterpret_cast<uintptr_t>(lpCheatManagerClass))
-            );
-
-            lpLocalPlayerController->CheatClass = lpCheatManagerClass;
-
-            LogMessage(
-                "EnableCheats",
-                "CheatClass assigned successfully"
-            );
-        }
-
-        LogMessage(
-            "EnableCheats",
-            "Attempting to patch EnableCheatsImpl..."
-        );
-
-        // Patch the EnableCheatsImpl function to skip the check
-        void *lpEnableCheatsImpl = reinterpret_cast<void*>(fnEnableCheatsImpl);
-        if (nullptr == lpEnableCheatsImpl) {
-            LogError("EnableCheats", "Failed to resolve EnableCheatsImpl function");
-            return;
-        }
-
-        void *lpSkipCheckTarget =
-            reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(lpEnableCheatsImpl) + qwPatchSkipTargetOffset);
-
-        // compare the target bytes to the expected bytes
-        if (EXIT_SUCCESS != memcmp(
-            lpSkipCheckTarget,
-            abySkipTargetCheck,
-            sizeof(abySkipTargetCheck)
-        )) {
-            LogError("EnableCheats", "Unexpected bytes at skip check target");
-            return;
-        }
-
-        DWORD dwOldProtect;
-        if (!VirtualProtect(
-            lpEnableCheatsImpl,
-            qwPatchSkipTargetOffset + sizeof(abySkipTargetCheck),
-            PAGE_EXECUTE_READWRITE,
-            &dwOldProtect
-        )) {
-            LogError(
-                "EnableCheats",
-                "Failed to change memory protection for EnableCheatsImpl"
-            );
-            return;
-        }
-
-        // Patch the target bytes with unconditional jump
-        memcpy(
-            lpSkipCheckTarget,
-            abyPatchSkipTarget,
-            sizeof(abyPatchSkipTarget)
-        );
-
-        // Restore the original memory protection
-        VirtualProtect(
-            lpEnableCheatsImpl,
-            qwPatchSkipTargetOffset + sizeof(abySkipTargetCheck),
-            dwOldProtect,
-            &dwOldProtect
-        );
-
-
-        LogMessage(
-            "EnableCheats",
-            "EnableCheatsImpl patched successfully, EnableCheats() can now be called."
-        );
+        return nullptr;
     }
 }

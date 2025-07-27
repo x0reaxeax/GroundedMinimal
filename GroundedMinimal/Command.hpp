@@ -25,6 +25,7 @@ namespace Command {
         CmdIdCullItemInstance,
         CmdIdC2Cycle,
         CmdIdSummon,
+        CmdIdCheatManagerExecute,
         CmdIdMax
     };
 
@@ -65,6 +66,7 @@ namespace Command {
         CommandBufferCondition.notify_one();
     }
 
+    void WaitForCommandBufferReady(void);
     void ProcessCommands(void);
 }
 

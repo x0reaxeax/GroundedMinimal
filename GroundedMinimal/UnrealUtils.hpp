@@ -108,7 +108,9 @@ namespace UnrealUtils {
         const std::string& szDataTableFilterNeedle = ""
     );
 
-    void UnlockMultiplayerCheatManager(void);
+    SDK::UGameInstance *GetOwningGameInstance(void);
+
+    SDK::APlayerController *GetLocalPlayerController(void);
 };
 
 #endif // _GROUNDED_UNREAL_UTILS_HPP

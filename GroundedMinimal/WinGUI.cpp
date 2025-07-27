@@ -2,6 +2,7 @@
 // Copyright (C) 2025 x0reaxeax
 
 #include "GroundedMinimal.hpp"
+#include "CheatManager.hpp"
 #include "UnrealUtils.hpp"
 #include "ItemSpawner.hpp"
 #include "CoreUtils.hpp"
@@ -25,6 +26,7 @@
 #define IDC_CHECK_SHOW_CONSOLE    100
 #define IDC_CHECK_GLOBAL_CHEAT    101
 #define IDC_CHECK_GLOBAL_C2       102
+#define IDC_CHECK_C2CTHREAD       103
 #define IDC_LIST_PLAYERS          200
 #define IDC_LIST_DATA_TABLES      201
 #define IDC_LIST_ITEM_NAMES       202
@@ -33,6 +35,7 @@
 #define IDC_BUTTON_CULL           301
 #define IDC_BUTTON_C2_CYCLE       302
 #define IDC_BUTTON_SUMMON         303
+#define _IDC_BUTTON_CHEAT_ID_BASE 304
 #define IDC_EDIT_ITEM_COUNT       400
 #define IDC_STATIC_ITEM_COUNT     401
 #define IDC_TIMER_PLAYER_UPDATE   500
@@ -44,15 +47,131 @@
 #define IDC_STATIC_GITHUB         605
 
 namespace WinGUI {
+    struct CheatButtonDefinition {
+        HWND ButtonHandle = nullptr;
+        uint32_t ButtonId;
+        const wchar_t* ButtonText;
+        CheatManager::CheatManagerFunctionId FunctionId;
+    };
+
     ///////////////////////////////////////////////////////
     /// Globals
 
     wchar_t g_szVersionString[64] = { 0 };
 
+    ///////////////////////////////////////////////////////
+    /// Callbax
+
     std::function<void(int32_t, const std::wstring&, const std::wstring&, int32_t)> fnSpawnCallback = nullptr;
     std::function<void()> fnGlobalC2CycleCallback = nullptr;
     std::function<void(const std::wstring&)> fnDataTableSelectedCallback = nullptr;
     std::function<void(const std::string&)> fnSummonCallback = nullptr;
+
+    inline static CheatButtonDefinition g_CheatButtons[static_cast<uint32_t>(CheatManager::CheatManagerFunctionId::Max) - 1] = {
+        { 
+            nullptr, 
+            _IDC_BUTTON_CHEAT_ID_BASE + static_cast<uint32_t>(CheatManager::CheatManagerFunctionId::AddWhiteMolars), 
+            L"Add 1 White Molar", 
+            CheatManager::CheatManagerFunctionId::AddWhiteMolars 
+        },
+        { 
+            nullptr, 
+            _IDC_BUTTON_CHEAT_ID_BASE + static_cast<uint32_t>(CheatManager::CheatManagerFunctionId::AddGoldMolars), 
+            L"Add 1 Gold Molar", 
+            CheatManager::CheatManagerFunctionId::AddGoldMolars 
+        },
+        { 
+            nullptr, 
+            _IDC_BUTTON_CHEAT_ID_BASE + static_cast<uint32_t>(CheatManager::CheatManagerFunctionId::AddRawScience),
+            L"Add 1000 Raw Science", 
+            CheatManager::CheatManagerFunctionId::AddRawScience 
+        },
+        { 
+            nullptr, 
+            _IDC_BUTTON_CHEAT_ID_BASE + static_cast<uint32_t>(CheatManager::CheatManagerFunctionId::CompleteActiveDefensePoint), 
+            L"Complete Defense",
+            CheatManager::CheatManagerFunctionId::CompleteActiveDefensePoint 
+        },
+        { 
+            nullptr, 
+            _IDC_BUTTON_CHEAT_ID_BASE + static_cast<uint32_t>(CheatManager::CheatManagerFunctionId::ToggleHud),
+            L"Toggle HUD",
+            CheatManager::CheatManagerFunctionId::ToggleHud 
+        },
+        { 
+            nullptr, 
+            _IDC_BUTTON_CHEAT_ID_BASE + static_cast<uint32_t>(CheatManager::CheatManagerFunctionId::UnlockAllRecipes),
+            L"Unlock All Recipes",
+            CheatManager::CheatManagerFunctionId::UnlockAllRecipes 
+        },
+        { 
+            nullptr, 
+            _IDC_BUTTON_CHEAT_ID_BASE + static_cast<uint32_t>(CheatManager::CheatManagerFunctionId::UnlockAllLandmarks),
+            L"Unlock All Landmarks",
+            CheatManager::CheatManagerFunctionId::UnlockAllLandmarks 
+        },
+        { 
+            nullptr, 
+            _IDC_BUTTON_CHEAT_ID_BASE + static_cast<uint32_t>(CheatManager::CheatManagerFunctionId::UnlockMonthlyTechTrees),
+            L"Unlock Monthly Tech Trees",
+            CheatManager::CheatManagerFunctionId::UnlockMonthlyTechTrees 
+        },
+        { 
+            nullptr, 
+            _IDC_BUTTON_CHEAT_ID_BASE + static_cast<uint32_t>(CheatManager::CheatManagerFunctionId::UnlockMutations),
+            L"Unlock All Mutations",
+            CheatManager::CheatManagerFunctionId::UnlockMutations 
+        },
+        { 
+            nullptr, 
+            _IDC_BUTTON_CHEAT_ID_BASE + static_cast<uint32_t>(CheatManager::CheatManagerFunctionId::UnlockScabs),
+            L"Unlock All SCA.Bs",
+            CheatManager::CheatManagerFunctionId::UnlockScabs 
+        }
+    };
+
+    static void CheatManagerExecuteGUIProxy(
+        CheatManager::CheatManagerFunctionId fdwFunctionId
+    ) {
+        if (CheatManager::CheatManagerFunctionId::None == fdwFunctionId) {
+            LogError("CheatManager", "Invalid CheatManagerFunctionId: None");
+            return;
+        }
+
+        if (fdwFunctionId >= CheatManager::CheatManagerFunctionId::Max) {
+            LogError(
+                "CheatManager", 
+                "Invalid CheatManagerFunctionId: " + std::to_string(static_cast<uint32_t>(fdwFunctionId))
+            );
+            return;
+        }
+
+
+        CheatManager::CheatManagerParams* lpParams = new CheatManager::CheatManagerParams{
+            .FunctionId = fdwFunctionId,
+            .FunctionParams = { 0, 0, 0, 0 }
+        };
+
+        switch (fdwFunctionId) {
+            case CheatManager::CheatManagerFunctionId::AddWhiteMolars:
+            case CheatManager::CheatManagerFunctionId::AddGoldMolars:
+                lpParams->Param1 = 1;
+                break;
+            case CheatManager::CheatManagerFunctionId::AddRawScience:
+                lpParams->Param1 = 1000;
+                break;
+            default:
+                break;
+        }
+
+        DisableGlobalOutput();
+        Command::SubmitTypedCommand(
+            Command::CommandId::CmdIdCheatManagerExecute,
+            lpParams
+        );
+        Command::WaitForCommandBufferReady();
+        EnableGlobalOutput();
+    }
 
     std::vector<SDK::APlayerState*> g_vszPlayers;
     std::vector<UnrealUtils::DataTableInfo> g_vDataTables;
@@ -208,7 +327,7 @@ namespace WinGUI {
             RegisterClassEx(&wcWindowClass);
 
             ///////////////////////////////////////////////////////
-            /// Create main window (increased height for new controls)
+            /// Create main window
 
             g_hMainWnd = CreateWindowEx(
                 0,
@@ -216,7 +335,7 @@ namespace WinGUI {
                 L"Grounded Debug GUI",
                 WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
                 CW_USEDEFAULT, CW_USEDEFAULT,
-                800, 750, // Increased height
+                800, 750,
                 NULL, NULL, wcWindowClass.hInstance, NULL
             );
 
@@ -226,7 +345,38 @@ namespace WinGUI {
             }
 
             ///////////////////////////////////////////////////////
-            /// Create checkboxes
+            /// Create CheatManager buttons
+            ///
+            /// Grid layout: 4 buttons per column, starting at X = 400, Y = 380
+            const int32_t BUTTONS_PER_COLUMN = 6;
+            const int32_t BUTTON_WIDTH = 180;
+            const int32_t BUTTON_HEIGHT = 25;
+            const int32_t BUTTON_SPACING_Y = 30;
+            const int32_t BUTTON_SPACING_X = 190; // Button width + 10px spacing
+            const int32_t START_X = 400;
+            const int32_t START_Y = 380;
+            
+            for (uint32_t i = 0; i < ARRAYSIZE(g_CheatButtons); ++i) {
+                // Calculate column and row for current button
+                int32_t column = i / BUTTONS_PER_COLUMN;
+                int32_t row = i % BUTTONS_PER_COLUMN;
+                
+                // Calculate position
+                int32_t x = START_X + (column * BUTTON_SPACING_X);
+                int32_t y = START_Y + (row * BUTTON_SPACING_Y);
+                
+                g_CheatButtons[i].ButtonHandle = CreateWindowEx(
+                    0, L"BUTTON", g_CheatButtons[i].ButtonText,
+                    WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON | WS_TABSTOP,
+                    x, y, BUTTON_WIDTH, BUTTON_HEIGHT,
+                    g_hMainWnd, (HMENU) g_CheatButtons[i].ButtonId, wcWindowClass.hInstance, NULL
+                );
+
+                if (nullptr == g_CheatButtons[i].ButtonHandle) {
+                    LogError("WinGUI", "Failed to create CheatManager button: %ls", g_CheatButtons[i].ButtonText);
+                    continue;
+                }
+            }   
 
             g_hCheckShowConsole = CreateWindowEx(
                 0, L"BUTTON", L"Show Debug Console",
@@ -256,6 +406,13 @@ namespace WinGUI {
                 WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX | WS_TABSTOP,
                 10, 60, 180, 20,
                 g_hMainWnd, (HMENU) IDC_CHECK_GLOBAL_C2, wcWindowClass.hInstance, NULL
+            );
+
+            HWND hCheckC2CycleThread = CreateWindowEx(
+                0, L"BUTTON", L"Enable Automatic C2 Cycle",
+                WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX | WS_TABSTOP,
+                410, 620 + 30 + 20, 300, 20,
+                g_hMainWnd, (HMENU) IDC_CHECK_C2CTHREAD, wcWindowClass.hInstance, NULL
             );
 
             // Create player list
@@ -442,12 +599,12 @@ namespace WinGUI {
                 wcWindowClass.hInstance, 
                 NULL
             );
-
+            //380 + 200 - 40
             // Create GitHub repository label (as clickable button)
             g_hStaticGithub = CreateWindowEx(
                 0, L"BUTTON", GITHUB_REPO_URL,
                 WS_CHILD | WS_VISIBLE | BS_FLAT | BS_LEFT,
-                400, 475, 380, 40,
+                400, 380 + 200 - 10, 380, 40,
                 g_hMainWnd, 
                 (HMENU) IDC_STATIC_GITHUB, 
                 wcWindowClass.hInstance, 
@@ -766,6 +923,20 @@ namespace WinGUI {
         LPARAM lParam
     ) {
         switch (uMsg) {
+            case WM_DPICHANGED: {
+                RECT* const prcNewWindow = (RECT*) lParam;
+                SetWindowPos(
+                    hWnd,
+                    NULL,
+                    prcNewWindow->left,
+                    prcNewWindow->top,
+                    prcNewWindow->right - prcNewWindow->left,
+                    prcNewWindow->bottom - prcNewWindow->top,
+                    SWP_NOZORDER | SWP_NOACTIVATE
+                );
+                break;
+            }
+
             case WM_TIMER: {
                 if (wParam == IDC_TIMER_PLAYER_UPDATE) {
                     HWND hFocusedWindow = GetFocus();
@@ -838,6 +1009,26 @@ namespace WinGUI {
             }
 
             case WM_COMMAND: {
+                // Test CheatManager button clicks
+                uint32_t uButtonId = LOWORD(wParam);
+                if (
+                    uButtonId > _IDC_BUTTON_CHEAT_ID_BASE 
+                    &&
+                    uButtonId < _IDC_BUTTON_CHEAT_ID_BASE + ARRAYSIZE(g_CheatButtons)
+                ) {
+                    CheatManager::CheatManagerFunctionId fdwTargetId = CheatManager::CheatManagerFunctionId::None;
+                    for (const auto& def : g_CheatButtons) {
+                        if (def.ButtonId == uButtonId) {
+                            fdwTargetId = def.FunctionId;
+                            break;
+                        }
+                    }
+
+                    CheatManagerExecuteGUIProxy(fdwTargetId);
+
+                    return 0;
+                }
+
                 // Handle edit control notifications
                 if (HIWORD(wParam) == EN_CHANGE) {
                     if (LOWORD(wParam) == IDC_EDIT_ITEM_COUNT) {
@@ -909,6 +1100,28 @@ namespace WinGUI {
                             ),
                             true
                         );
+                        break;
+                    }
+
+                    case IDC_CHECK_C2CTHREAD: {
+                        bool bNewValue = (BST_CHECKED == IsDlgButtonChecked(hWnd, IDC_CHECK_C2CTHREAD));
+
+                        LogMessage(
+                            "WinGUI",
+                            "C2 Cycle Thread " + std::string(
+                                C2Cycle::C2ThreadRunning.load()
+                                ? "enabled" 
+                                : "disabled"
+                            ),
+                            true
+                        );
+
+                        if (bNewValue) {
+                            C2Cycle::CreateC2CycleThread();
+                        } else {
+                            C2Cycle::StopC2CycleThread();
+                        }
+
                         break;
                     }
 
@@ -1123,9 +1336,10 @@ namespace WinGUI {
             );
 
             // wait to enable output again
-            while (Command::CommandBufferCookedForExecution) {
+            /*while (Command::CommandBufferCookedForExecution) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
-            }
+            }*/
+            Command::WaitForCommandBufferReady();
 
             EnableGlobalOutput();
         };
@@ -1142,10 +1356,11 @@ namespace WinGUI {
             DisableGlobalOutput();
             Summon::SummonClass(szClassName);
 
-            while (Command::CommandBufferCookedForExecution) {
-                // wait to enable output again
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-            }
+            //while (Command::CommandBufferCookedForExecution) {
+            //    // wait to enable output again
+            //    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            //}
+            Command::WaitForCommandBufferReady();
 
             EnableGlobalOutput();
         };

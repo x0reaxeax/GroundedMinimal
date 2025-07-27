@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2025 x0reaxeax
 
+#include "CheatManager.hpp"
 #include "ItemSpawner.hpp"
 #include "UnrealUtils.hpp"
 #include "CoreUtils.hpp"
@@ -18,6 +19,13 @@ namespace Command {
         .Id = CommandId::CmdIdNone,
         .Params = nullptr
     };
+
+    void WaitForCommandBufferReady(void) {
+        std::unique_lock<std::mutex> lock(CommandBufferMutex);
+        CommandBufferCondition.wait(lock, []() {
+            return !CommandBufferCookedForExecution.load();
+        });
+    }
 
     void ProcessCommands(void) {
         std::unique_lock<std::mutex> lockUnique(CommandBufferMutex);
@@ -93,7 +101,7 @@ namespace Command {
                         "CmdIdSummon: CheatManager is null, attempting to force-unlock.."
                     );
 
-                    UnrealUtils::UnlockMultiplayerCheatManager();
+                    CheatManager::UnlockMultiplayerCheatManager();
 
                     // retry enabling cheats
                     lpParams->lpLocalPlayerController->EnableCheats();
@@ -139,6 +147,24 @@ namespace Command {
                 C2Cycle::CullItemInstance(lpParams->lpItemInstance);
                 break;
 
+            }
+
+            case CommandId::CmdIdCheatManagerExecute: {
+                LogMessage("ProcessEvent", "Command: Execute Cheat Manager Command");
+                CheatManager::BufferParamsExecuteCheat *lpParams = 
+                    static_cast<CheatManager::BufferParamsExecuteCheat*>(localBuffer.Params);
+
+                LogMessage(
+                    "ProcessEvent", 
+                    "CheatManagerExecute - Function ID: " + 
+                    std::to_string(static_cast<uint16_t>(lpParams->FunctionId)),
+                    true
+                );
+                
+                CheatManager::CheatManagerExecute(
+                    lpParams
+                );
+                break;
             }
 
             default: {

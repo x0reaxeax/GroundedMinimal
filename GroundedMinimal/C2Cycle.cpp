@@ -18,6 +18,7 @@
 
 namespace C2Cycle {
     bool GlobalC2Authority = false;
+    std::atomic<bool> C2ThreadRunning{ false };
     
     static uint64_t CycleCounter = 1;
 
@@ -32,6 +33,42 @@ namespace C2Cycle {
             + " <-> " + lpItemB->GetName() 
             + " (d2 = " + std::to_string(fDistance2) + ")"
         );
+    }
+
+    void CreateC2CycleThread(
+        void
+    ) {
+        if (C2ThreadRunning.load()) {
+            LogError("C2Cycle", "C2Cycle thread is already running");
+            return;
+        }
+        C2ThreadRunning.store(true);
+
+        LogMessage("C2Cycle", "Starting C2Cycle thread...", true);
+        std::thread([]() {
+            while (C2ThreadRunning.load()) {
+                std::this_thread::sleep_for(std::chrono::seconds(10));
+                DisableGlobalOutput();
+                Command::SubmitTypedCommand<void*>(
+                    Command::CommandId::CmdIdC2Cycle,
+                    nullptr
+                );
+
+                Command::WaitForCommandBufferReady();
+                EnableGlobalOutput();
+            }
+        }).detach();
+    }
+
+    void StopC2CycleThread(void) {
+        if (!C2ThreadRunning.load()) {
+            LogMessage("C2Cycle", "C2Cycle thread is not running", true);
+            return;
+        }
+
+        LogMessage("C2Cycle", "Stopping C2Cycle thread...", true);
+        C2ThreadRunning.store(false);
+        LogMessage("C2Cycle", "C2Cycle thread stopped", true);
     }
 
     void GameThread CullItemInstance(
@@ -198,17 +235,17 @@ namespace C2Cycle {
         uint64_t qwTotalDestroyed = 0;
         const float cfRadiusSquared = fClusterRadius * fClusterRadius;
         
-        for (SIZE_T i = 0; i < CollectedItems.size(); ++i) {
+        for (size_t i = 0; i < CollectedItems.size(); ++i) {
             SDK::ASpawnedItem *lpItemA = CollectedItems[i];
             if (nullptr == lpItemA || lpItemA->bActorIsBeingDestroyed) {
                 continue;
             }
 
-            INT32 iNearbyItemCount = 0;
+            int32_t iNearbyItemCount = 0;
             std::vector<SDK::ASpawnedItem *> vNearbyItemCluster;
 
             const SDK::FVector vLocA = lpItemA->K2_GetActorLocation();
-            for (SIZE_T j = i + 1; j < CollectedItems.size(); ++j) {
+            for (size_t j = i + 1; j < CollectedItems.size(); ++j) {
                 SDK::ASpawnedItem *lpItemB = CollectedItems[j];
                 if (nullptr == lpItemB || lpItemB->bActorIsBeingDestroyed) {
                     continue;
@@ -224,7 +261,7 @@ namespace C2Cycle {
 
             if (iNearbyItemCount >= CLUSTER_MAX_ITEMS) {
                 // Keep only lpItemA and cull all nearby items
-                for (SIZE_T k = 0; k < vNearbyItemCluster.size(); ++k) {
+                for (size_t k = 0; k < vNearbyItemCluster.size(); ++k) {
                     SDK::ASpawnedItem *lpItemToCull = vNearbyItemCluster[k];
                     if (nullptr != lpItemToCull && !lpItemToCull->bActorIsBeingDestroyed) {
                         CullItemInstance(lpItemToCull);
@@ -245,18 +282,24 @@ namespace C2Cycle {
             LogError("C2", "C2Cycle can only be executed by the host");
             return;
         }
-        
-        // If this output is enabled and there's a f ton of items, the game will straight up freeze for a few seconds.
-        // Leaving it disabled by default.
-        DisableGlobalOutput();
+
         LogMessage("C2", "Cleanup cycle " + std::to_string(CycleCounter) + " started");
 
+        // If this output is enabled and there's a f ton of items, the game will straight up freeze for a few seconds.
+        // Leaving it disabled by default.
+        bool bGlobalOutputEnabled = GlobalOutputEnabled;
+        DisableGlobalOutput();
         LogMessage("Collect", "Collecting items...");
         CollectTargetFoodItemCandidates();
         CullClumpedItems();
-        EnableGlobalOutput();
+        if (bGlobalOutputEnabled) {
+            EnableGlobalOutput();
+        }
         LogMessage("C2", "Cleanup cycle " + std::to_string(CycleCounter++) + " completed");
-        // Redraw interpreter input symbol, the only direct std::cout allowed overall
-        std::cout << "$: " << std::flush;
+
+        if (bGlobalOutputEnabled) {
+            // Redraw interpreter input symbol, the only direct std::cout allowed overall
+            std::cout << "$: " << std::flush;
+        }
     }
 }

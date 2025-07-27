@@ -34,6 +34,7 @@
 /// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #include "GroundedMinimal.hpp"
+#include "CheatManager.hpp"
 #include "HookManager.hpp"
 #include "UnrealUtils.hpp"
 #include "ItemSpawner.hpp"
@@ -136,6 +137,10 @@ void EnableGlobalOutput(void) {
 
 void DisableGlobalOutput(void) {
     GlobalOutputEnabled = false;
+}
+
+bool IsDebugModeEnabled(void) {
+    return g_bDebug;
 }
 
 bool StringContainsCaseInsensitive(
@@ -250,7 +255,7 @@ void __fastcall _HookedProcessEvent(
 ) {
     OriginalProcessEvent(lpObject, lpFunction, lpParams);
 
-    if (Command::CommandBufferCookedForExecution) {
+    if (Command::CommandBufferCookedForExecution.load()) {
         Command::ProcessCommands();
     }
 }
@@ -549,6 +554,14 @@ void HandleClassDump(void) {
     UnrealUtils::DumpClasses(nullptr, szClassName);
 }
 
+void HandleGetAuthority(void) {
+    if (UnrealUtils::IsPlayerHostAuthority()) {
+        LogMessage("Authority", "You have authority as the host");
+    } else {
+        LogError("Authority", "You do not have authority as the host");
+    }
+}
+
 // Super command table oh my god
 ConsoleCommand g_Commands[] = {
     //{"c2", "Run C2 cleanup cycle", []() { C2Cycle::C2Cycle(); }},
@@ -560,30 +573,45 @@ ConsoleCommand g_Commands[] = {
     {"F_FindItemTable", "Find DataTable for item", HandleFindItemTable },
     {"F_FunctionDump", "Dump functions", HandleFunctionDump },
     {"F_ClassDump", "Dump classes by name", HandleClassDump },
-    {"H_GetAuthority", "Check host authority", []() { UnrealUtils::IsPlayerHostAuthority(); }},
+    {"H_GetAuthority", "Check host authority", HandleGetAuthority },
     {"I_SpawnItem", "Spawn item", HandleSpawnItem },
     {"P_ShowPlayers", "Show connected players", []() { UnrealUtils::DumpConnectedPlayers(); }},
     {"S_SummonClass", "Summon an internal class", HandleSummon },
     {
         "X_GlobalCheatMode", "Toggle global cheat mode", []() { 
-        ItemSpawner::GlobalCheatMode = !ItemSpawner::GlobalCheatMode;
-        LogMessage(
-            "Cheat", 
-            "Global cheat mode " + std::string(ItemSpawner::GlobalCheatMode ? "enabled" : "disabled")
-        );
-    }},
+            ItemSpawner::GlobalCheatMode = !ItemSpawner::GlobalCheatMode;
+            LogMessage(
+                "Cheat", 
+                "Global cheat mode " + std::string(ItemSpawner::GlobalCheatMode ? "enabled" : "disabled")
+            );
+        }
+    },
     {
         "X_DebugToggle", "Toggle debug mode", []() { 
-        g_bDebug = !g_bDebug;
-        LogMessage(
-            "Debug", 
-            "Debug mode " + std::string(g_bDebug ? "enabled" : "disabled")
-        );
-    }},
+            g_bDebug = !g_bDebug;
+            LogMessage(
+                "Debug", 
+                "Debug mode " + std::string(g_bDebug ? "enabled" : "disabled")
+            );
+        }
+    },
     {
-        "X_UnlockCheats", 
-        "Patch EnableCheats to skip multiplayer checks", 
-        UnrealUtils::UnlockMultiplayerCheatManager 
+        "X_UnlockCheats", "Patch EnableCheats to skip multiplayer checks", []() { 
+            LogMessage(
+                "CheatManager", 
+                "Unlocking Multiplayer Cheat Manager..."
+            );
+            CheatManager::UnlockMultiplayerCheatManager();
+        }
+    },
+    {
+        "X_InitCheatManager", "Initialize SurvivalCheatManager", []() {
+            LogMessage(
+                "CheatManager", 
+                "Initializing Survival Cheat Manager..."
+            );
+            CheatManager::Initialize();
+        }
     }
 };
 
@@ -667,17 +695,18 @@ DWORD WINAPI ThreadEntry(
     LogMessage("Init", "GroundedMinimal: GUI thread launched successfully");
 
     while (g_bRunning) {
-        const int32_t iMaxWaitMs = 60000; // Wait for a maximum of 60 seconds, then cap a bro
-        int32_t iWaitedMs = 0;
-        
-        while (Command::CommandBufferCookedForExecution.load()) {
-            if (iWaitedMs >= iMaxWaitMs) {
-                LogError("Command", "Command buffer stuck for too long, forcing unlock..");
-                Command::CommandBufferCookedForExecution = false; // cap a bro, who knows what will happen
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-            iWaitedMs += 10;
-        }
+        //const int32_t iMaxWaitMs = 60000; // Wait for a maximum of 60 seconds, then cap a bro
+        //int32_t iWaitedMs = 0;
+        //
+        //while (Command::CommandBufferCookedForExecution.load()) {
+        //    if (iWaitedMs >= iMaxWaitMs) {
+        //        LogError("Command", "Command buffer stuck for too long, forcing unlock..");
+        //        Command::CommandBufferCookedForExecution = false; // cap a bro, who knows what will happen
+        //    }
+        //    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        //    iWaitedMs += 10;
+        //}
+        Command::WaitForCommandBufferReady();
 
         std::string szInput;
         ReadInterpreterInput("$: ", szInput);
