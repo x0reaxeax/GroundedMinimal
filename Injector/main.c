@@ -10,7 +10,10 @@ int main(void) {
 
     CHAR szCurrentDir[MAX_PATH] = { 0 };
     CHAR szTargetDllPath[MAX_PATH * 2] = { 0 };
-    LPCSTR cszTargetProcessName = "Maine-Win64-Shipping.exe";
+    LPCSTR acszTargetProcessNames[] = {
+        "Maine-Win64-Shipping.exe",
+        "Maine-WinGDK-Shipping.exe"
+    };
     
     // Get current directory
     if (0 == GetCurrentDirectoryA(
@@ -84,13 +87,20 @@ int main(void) {
     }
 
     DWORD dwTargetProcessId = 0;
+    DWORD dwTargetProcessNameIndex = 0;
     do {
-        if (EXIT_SUCCESS == strncmp(
-            procEntry32.szExeFile,
-            cszTargetProcessName,
-            MAX_PATH
-        )) {
-            dwTargetProcessId = procEntry32.th32ProcessID;
+        for (DWORD i = 0; i < ARRAYSIZE(acszTargetProcessNames); i++) {
+            if (EXIT_SUCCESS == strncmp(
+                procEntry32.szExeFile,
+                acszTargetProcessNames[i],
+                MAX_PATH
+            )) {
+                dwTargetProcessId = procEntry32.th32ProcessID;
+                dwTargetProcessNameIndex = i;
+                break;
+            }
+        }
+        if (0 != dwTargetProcessId) {
             break;
         }
     } while (Process32Next(hSnapshot, &procEntry32));
@@ -106,7 +116,7 @@ int main(void) {
 
     printf(
         "[+] Found Grounded process: '%s' (PID: %lu)\n",
-        cszTargetProcessName,
+        acszTargetProcessNames[dwTargetProcessNameIndex],
         dwTargetProcessId
     );
 
