@@ -1,4 +1,4 @@
-# GroundedMinimal - Small debug/cheat/mod tool for Grounded (Steam version)
+# GroundedMinimal - Small debug/cheat/mod tool for Grounded (Steam + Xbox Game Pass)
 
 ## !!!IMPORTANT PLZ READ!!!
 Under set configurations, this tool can allow any connected players to **EXECUTE CONTROLLED CODE ON YOUR MACHINE**.  
@@ -136,7 +136,7 @@ C++17 or higher is required.
  - Crashes may occur when (re)loading saves, or backing out to the main menu.
  - The game might temporarily freeze when cleaning up MASSIVE number of items from the ground. Just give it some time.
  - Upon exiting the game, the tool sometimes keeps the game process running, so consider killing it manually.
- - The tool was only tested with the Steam version of Grounded, and may not work with Xbox Game Pass or *other* versions.
+ - ~~The tool was only tested with the Steam version of Grounded, and may not work with Xbox Game Pass or *other* versions.~~
  - The tool was only tested with 2 players, because I don't have friends (F).
 
 ## Extending
@@ -196,7 +196,7 @@ This project is licensed under the [GNU General Public License v3.0](#license).
 The content of this repository exists purely for educational purposes, and the author is not responsible for any damages caused by this software.  
 
 ## License
-    GroundedMinimal - Debugging tool for Grounded (Steam version)
+    GroundedMinimal - Debugging tool for Grounded (Steam + XGP version)
     Copyright (C) 2025  x0reaxeax
 
     This program is free software: you can redistribute it and/or modify
